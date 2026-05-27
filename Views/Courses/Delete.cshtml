@@ -1,0 +1,26 @@
+﻿@model MentoraPlatform.Models.Course
+
+@{
+    ViewBag.Title = "Ștergere Curs";
+}
+
+<div class="container mt-4">
+    <div class="alert alert-danger">
+        <h3>Sigur vrei să ștergi acest curs?</h3>
+        <p>Această acțiune este ireversibilă.</p>
+    </div>
+
+    <div class="card p-4">
+        <h4>@Model.Title</h4>
+        <p>@Model.Description</p>
+
+        @using (Html.BeginForm())
+        {
+            @Html.AntiForgeryToken()
+            <div class="form-actions no-color">
+                <input type="submit" value="Da, Șterge" class="btn btn-danger" />
+                @Html.ActionLink("Anulează", "Index", null, new { @class = "btn btn-secondary" })
+            </div>
+        }
+    </div>
+</div>

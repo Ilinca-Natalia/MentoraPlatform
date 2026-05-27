@@ -1,0 +1,44 @@
+﻿@model MentoraPlatform.Models.Quiz
+
+<div class="container mt-4 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow border-0">
+                <div class="card-header bg-dark text-white p-4">
+                    <h3 class="mb-0">@Model.Title</h3>
+                    <small class="opacity-75">Asigură-te că citești cu atenție fiecare întrebare.</small>
+                </div>
+
+                <div class="card-body p-4">
+                    @using (Html.BeginForm("SubmitQuiz", "Quizzes", FormMethod.Post))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.Hidden("quizId", Model.Id)
+
+                        for (int i = 0; i < Model.Questions.Count; i++)
+                        {
+                            var question = Model.Questions.ElementAt(i);
+                            <div class="mb-5">
+                                <h5 class="fw-bold mb-3">@(i + 1). @question.Text</h5>
+                                <div class="list-group">
+                                    @foreach (var choice in question.Choices)
+                                    {
+                                        <label class="list-group-item list-group-item-action d-flex align-items-center py-3">
+                                            <input type="radio" name="question_@question.Id" value="@choice.Id" class="form-check-input me-3" required />
+                                            <span>@choice.AnswerText</span>
+                                        </label>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        <hr class="my-4">
+                        <button type="submit" class="btn btn-success btn-lg w-100 shadow-sm fw-bold">
+                            FINALIZEAZĂ ȘI TRIMITE RĂSPUNSURILE
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

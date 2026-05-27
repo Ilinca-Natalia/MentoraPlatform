@@ -1,0 +1,92 @@
+﻿@using Microsoft.AspNet.Identity
+@model IEnumerable<MentoraPlatform.Models.Course>
+
+@{
+    ViewBag.Title = "Explorează Cursurile";
+}
+
+<div class="container mt-5">
+    <div class="text-center mb-5">
+        <h1 class="fw-bold display-4">@ViewBag.Title</h1>
+        <p class="text-muted">Alege cursul dorit și începe să înveți chiar astăzi.</p>
+
+        @if (Request.IsAuthenticated && (User.IsInRole("Professor") || User.IsInRole("Admin")))
+        {
+            @Html.ActionLink("Adaugă Curs Nou", "Create", null, new { @class = "btn btn-success rounded-pill px-4 shadow-sm" })
+        }
+    </div>
+
+    <div class="row g-4">
+        @if (Model != null && Model.Any())
+        {
+            foreach (var item in Model)
+            {
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 border-0 shadow-sm hover-card transition-all">
+                        @* Imagine placeholder pentru curs - îi dă aspectul de pe ITJunior *@
+                        <div class="bg-primary text-white text-center py-5 rounded-top" style="background: linear-gradient(45deg, #1e3c72 0%, #2a5298 100%);">
+                            <i class="fa fa-code fa-4x mb-2"></i>
+                            <h4 class="px-2">@item.Title</h4>
+                        </div>
+
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="badge bg-light text-primary border border-primary">Programare</span>
+                                <small class="text-muted"><i class="fa fa-calendar-alt"></i> @item.CreatedAt.ToShortDateString()</small>
+                            </div>
+
+                            <p class="card-text text-secondary" style="height: 4.5rem; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;">
+                                @item.Description
+                            </p>
+
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-soft-primary rounded-circle p-2 me-2">
+                                    <i class="fa fa-user-tie text-primary"></i>
+                                </div>
+                                <small class="fw-bold text-dark">@(item.Teacher != null ? item.Teacher.FirstName + " " + item.Teacher.LastName : "Mentor")</small>
+                            </div>
+                        </div>
+
+                        <div class="card-footer bg-white border-0 pb-3">
+                            <div class="d-grid gap-2">
+                                <a href="@Url.Action("Details", "Courses", new { id = item.Id })" class="btn btn-primary rounded-pill fw-bold">
+                                    Vezi Cursul <i class="fa fa-arrow-right ms-1"></i>
+                                </a>
+
+                                @if (Request.IsAuthenticated && (User.Identity.GetUserId() == item.TeacherId || User.IsInRole("Admin")))
+                                {
+                                    <div class="btn-group w-100 mt-1">
+                                        @Html.ActionLink("Edit", "Edit", new { id = item.Id }, new { @class = "btn btn-sm btn-outline-warning" })
+                                        @Html.ActionLink("Șterge", "Delete", new { id = item.Id }, new { @class = "btn btn-sm btn-outline-danger" })
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12 text-center py-5">
+                <i class="fa fa-search fa-4x text-light mb-3"></i>
+                <h3 class="text-muted">Momentan nu există cursuri disponibile.</h3>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .hover-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 1rem 3rem rgba(0,0,0,.175) !important;
+    }
+
+    .transition-all {
+        transition: all 0.3s ease-in-out;
+    }
+
+    .bg-soft-primary {
+        background-color: rgba(13, 110, 253, 0.1);
+    }
+</style>

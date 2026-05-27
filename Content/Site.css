@@ -1,0 +1,48 @@
+﻿/* Set padding to keep content from hitting the edges */
+.body-content {
+    margin-top: 15px;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+/* Override the default bootstrap behavior where horizontal description lists 
+   will truncate terms that are too long to fit in the left column 
+*/
+.dl-horizontal dt {
+    white-space: normal;
+}
+
+/* Set width on the form input elements since they're 100% wide by default */
+input,
+select,
+textarea {
+    max-width: 280px;
+}
+
+/* Navbar-ul să fie semi-transparent până la scroll */
+.navbar {
+    transition: all 0.4s ease-in-out;
+    padding: 15px 0; /* Mai aerisit la început */
+}
+
+    /* Stil când navbar-ul devine 'compact' la scroll (via JS) */
+    .navbar.navbar-scrolled {
+        padding: 8px 0;
+        background-color: rgba(33, 37, 41, 0.95) !important; /* Dark mode elegant */
+        backdrop-filter: blur(10px); /* Efect de sticlă mată */
+    }
+
+/* Efect de 'glow' pentru Code Writing */
+.nav-link.text-warning {
+    text-shadow: 0 0 5px rgba(255, 193, 7, 0.2);
+}
+
+/* Badge pentru rolul utilizatorului (în _LoginPartial) */
+.user-role-badge {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 10px;
+    vertical-align: middle;
+    margin-left: 5px;
+    text-transform: uppercase;
+}

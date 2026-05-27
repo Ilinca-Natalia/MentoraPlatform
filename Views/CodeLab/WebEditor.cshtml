@@ -1,0 +1,185 @@
+﻿@{
+    ViewBag.Title = "Web Editor Pro";
+}
+
+<!-- CodeMirror Core & Theme -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/theme/dracula.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/addon/lint/lint.min.css">
+
+<!-- Librării Compilare/Validare (Lintere) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jshint/2.13.6/jshint.min.js"></script>
+<script src="https://unpkg.com/htmlhint/lib/htmlhint.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/csslint/1.0.5/csslint.js"></script>
+
+<!-- CodeMirror Scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/mode/xml/xml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/mode/css/css.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/mode/javascript/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/addon/lint/lint.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/addon/lint/javascript-lint.min.js"></script>
+
+<style>
+    .CodeMirror {
+        height: 140px;
+        border-radius: 8px;
+        font-size: 13px;
+        margin-bottom: 15px;
+        border: 1px solid #333;
+    }
+
+    #consoleLog {
+        background: #000;
+        color: #0f0;
+        padding: 10px;
+        border-radius: 8px;
+        font-family: 'Consolas', monospace;
+        font-size: 12px;
+        height: 180px;
+        border: 1px solid #444;
+    }
+
+    .error-line {
+        color: #ff4444;
+        border-bottom: 1px dashed #ff4444;
+        font-weight: bold;
+    }
+
+    .log-line {
+        color: #00ff00;
+    }
+</style>
+
+<div class="container-fluid py-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="fw-bold m-0 text-white"><i class="fa fa-code text-primary me-2"></i>Mentora Pro Compiler</h4>
+        <div class="btn-group">
+            <button onclick="runWebCode()" class="btn btn-primary px-4 rounded-pill me-2 shadow"><i class="fa fa-terminal me-2"></i>Build & Run</button>
+            <button onclick="exportWebCode()" class="btn btn-outline-info px-4 rounded-pill me-2"><i class="fa fa-download me-2"></i>Export Bundle</button>
+            <button onclick="clearConsole()" class="btn btn-outline-danger px-3 rounded-pill"><i class="fa fa-eraser"></i></button>
+        </div>
+    </div>
+
+    <div class="row" style="height: 82vh;">
+        <!-- Panou Input (Editori) -->
+        <div class="col-md-5 h-100 d-flex flex-column bg-dark p-3 rounded-3 shadow-lg">
+            <label class="small fw-bold text-info"><i class="fab fa-html5 me-1"></i> STRUCTURE (HTML5)</label>
+            <textarea id="htmlCode"><h1>Salut Mentora!</h1>
+<div class="test">Compilatorul este activ.</div></textarea>
+
+            <label class="small fw-bold text-warning"><i class="fab fa-css3-alt me-1"></i> STYLES (CSS3)</label>
+            <textarea id="cssCode">body { background: #121212; color: white; transition: 0.3s; }
+h1 { color: #0d6efd; text-align: center; font-family: sans-serif; }</textarea>
+
+            <label class="small fw-bold text-warning-50"><i class="fab fa-js me-1"></i> LOGIC (ES6+)</label>
+            <textarea id="jsCode">console.log('Build successful!');
+// Încearcă să scrii greșit aici pentru a vedea compilatorul în acțiune</textarea>
+
+            <label class="small fw-bold text-danger mt-3"><i class="fa fa-bug me-1"></i> BUILD OUTPUT</label>
+            <div id="consoleLog" class="overflow-auto"></div>
+        </div>
+
+        <!-- Panou Output (Live Preview) -->
+        <div class="col-md-7 h-100">
+            <div class="card h-100 shadow-sm border-0 overflow-hidden bg-white">
+                <div class="card-header bg-light py-1 small fw-bold text-muted"><i class="fa fa-eye me-1"></i> LIVE RENDER</div>
+                <iframe id="preview" class="w-100 h-100 border-0"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    // Inițializare Editori
+    const config = { theme: "dracula", lineNumbers: true, tabSize: 2 };
+    var htmlEditor = CodeMirror.fromTextArea(document.getElementById("htmlCode"), { ...config, mode: "xml" });
+    var cssEditor = CodeMirror.fromTextArea(document.getElementById("cssCode"), { ...config, mode: "css" });
+    var jsEditor = CodeMirror.fromTextArea(document.getElementById("jsCode"), {
+        ...config,
+        mode: "javascript",
+        gutters: ["CodeMirror-lint-markers"],
+        lint: true
+    });
+
+    function runWebCode() {
+        const html = htmlEditor.getValue();
+        const css = cssEditor.getValue();
+        const js = jsEditor.getValue();
+        const consoleLog = document.getElementById('consoleLog');
+
+        consoleLog.innerHTML = "<div>[Build started at " + new Date().toLocaleTimeString() + "]</div>";
+        let hasErrors = false;
+
+        // 1. COMPILARE/VALIDARE HTML
+        const htmlValidation = HTMLHint.verify(html, { "tag-pair": true, "attr-no-duplication": true, "tagname-lowercase": true });
+        if (htmlValidation.length > 0) {
+            htmlValidation.forEach(err => {
+                logToConsole(`HTML ERROR (Line ${err.line}): ${err.message}`, "error");
+                hasErrors = true;
+            });
+        }
+
+        // 2. COMPILARE/VALIDARE CSS
+        const cssValidation = CSSLint.verify(css);
+        cssValidation.messages.forEach(msg => {
+            if (msg.type === 'error') {
+                logToConsole(`CSS ERROR (Line ${msg.line}): ${msg.message}`, "error");
+                hasErrors = true;
+            }
+        });
+
+        // 3. COMPILARE JS
+        try {
+            new Function(js);
+        } catch (e) {
+            logToConsole(`JS SYNTAX ERROR: ${e.message}`, "error");
+            hasErrors = true;
+        }
+
+        if (hasErrors) {
+            logToConsole("BUILD FAILED: Please fix the errors above.", "error");
+            return;
+        }
+
+        logToConsole("BUILD SUCCESSFUL. Rendering...", "success");
+
+        // Injectare
+        const preview = document.getElementById('preview').contentWindow.document;
+        const errorTrap = `<script>
+            window.onerror = function(m, u, l) { window.parent.postMessage({t:'error', m:m, l:l}, '*'); };
+            console.log = function() { window.parent.postMessage({t:'log', m:Array.from(arguments).join(' ')}, '*'); };
+        <\/script>`;
+
+        preview.open();
+        preview.write(errorTrap + html + "<style>" + css + "</style>" + "<script>" + js + "<\/script>");
+        preview.close();
+    }
+
+    function logToConsole(message, type = "info") {
+        const consoleLog = document.getElementById('consoleLog');
+        const div = document.createElement('div');
+        if (type === "error") div.className = "error-line";
+        if (type === "success") div.style.color = "#00ff00";
+        div.innerHTML = `> ${message}`;
+        consoleLog.appendChild(div);
+        consoleLog.scrollTop = consoleLog.scrollHeight;
+    }
+
+    function clearConsole() { document.getElementById('consoleLog').innerHTML = "> Console cleared."; }
+
+    function exportWebCode() {
+        const bundle = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${cssEditor.getValue()}</style></head><body>${htmlEditor.getValue()}<script>${jsEditor.getValue()}<\/script></body></html>`;
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([bundle], { type: 'text/html' }));
+        a.download = 'mentora_bundle_' + Date.now() + '.html';
+        a.click();
+    }
+
+    window.addEventListener('message', (e) => {
+        if (e.data.t === 'error') logToConsole(`RUNTIME ERROR: ${e.data.m}`, "error");
+        if (e.data.t === 'log') logToConsole(`CONSOLE: ${e.data.m}`, "info");
+    });
+
+    window.onload = runWebCode;
+</script>

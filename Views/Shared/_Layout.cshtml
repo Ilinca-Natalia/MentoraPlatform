@@ -1,0 +1,87 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title - My ASP.NET Application</title>
+    @Styles.Render("~/Content/css")
+    @Scripts.Render("~/bundles/modernizr")
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-dark bg-dark shadow-sm">
+        <div class="container">
+            @Html.ActionLink("Mentora", "Index", "Courses", new { area = "" }, new { @class = "navbar-brand text-info fw-bold" })
+
+            <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" title="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse d-sm-inline-flex justify-content-between">
+                <ul class="nav navbar-nav me-auto">
+                    @if (Request.IsAuthenticated)
+                    {
+                        @* 1. CURSURI - Toată lumea le vede *@
+                        <li class="nav-item">
+                            @Html.ActionLink("Cursuri", "Index", "Courses", null, new { @class = "nav-link" })
+                        </li>
+
+                        @* 2. TESTE - Dinamic în funcție de rol (Modificat pentru QuizzesController) *@
+                        <li class="nav-item">
+                            @if (User.IsInRole("Student"))
+                            {
+                                @* Studenții merg la Index pentru a vedea lista de teste disponibile *@
+                                @Html.ActionLink("Teste", "Index", "Quizzes", null, new { @class = "nav-link" })
+                            }
+                            else
+                            {
+                                @* Profesorii/Adminii merg la Index (sau o metodă de gestionare) *@
+                                @Html.ActionLink("Gestionare Teste", "Index", "Quizzes", null, new { @class = "nav-link" })
+                            }
+                        </li>
+
+                        @* 3. NOTE / REZULTATE *@
+                        <li class="nav-item">
+                            @if (User.IsInRole("Student"))
+                            {
+                                @Html.ActionLink("Note", "MyResults", "Grades", null, new { @class = "nav-link" })
+                            }
+                            else
+                            {
+                                @Html.ActionLink("Note Elevi", "StudentsGrades", "Grades", null, new { @class = "nav-link" })
+                            }
+                        </li>
+
+                        @* 4. CODE WRITING - Toată lumea are acces la editor *@
+                        <li class="nav-item">
+                            @Html.ActionLink("Code Writing", "Index", "CodeLab", null, new { @class = "nav-link text-warning" })
+                        </li>
+
+                        @* 5. GESTIONARE UTILIZATORI - Doar pentru Admin *@
+                        if (User.IsInRole("Admin"))
+                        {
+                            <li class="nav-item">
+                                @Html.ActionLink("Utilizatori", "Index", "Users", null, new { @class = "nav-link text-danger" })
+                            </li>
+                        }
+                    }
+                </ul>
+
+                @* 6. PARTEA DE CONT (Login/Register sau Salut, User! + Logout) *@
+                @Html.Partial("_LoginPartial")
+            </div>
+        </div>
+    </nav>
+    <div class="container body-content">
+        @RenderBody()
+        <hr />
+        <footer>
+            <p>&copy; @DateTime.Now.Year - My ASP.NET Application</p>
+        </footer>
+    </div>
+
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/bootstrap")
+    @RenderSection("scripts", required: false)
+</body>
+</html>

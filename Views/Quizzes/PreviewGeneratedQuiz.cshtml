@@ -1,0 +1,93 @@
+﻿@model MentoraPlatform.Models.QuizPreviewViewModel
+
+@{
+    ViewBag.Title = "Revizuire Test AI";
+}
+
+<div class="container mt-5 pb-5">
+    @* --- HEADER --- *@
+    <div class="d-flex align-items-center mb-4">
+        <div class="bg-primary bg-opacity-10 p-3 rounded-circle me-3">
+            <i class="fa fa-robot fa-2x text-primary"></i>
+        </div>
+        <div>
+            <h2 class="fw-bold m-0">Revizuire Test Generat de AI</h2>
+            <p class="text-muted m-0">Curs: <span class="fw-bold text-dark">@Model.CourseTitle</span></p>
+        </div>
+    </div>
+
+    @using (Html.BeginForm("ConfirmAndSaveQuiz", "Quizzes", FormMethod.Post))
+    {
+        @Html.AntiForgeryToken()
+        @Html.HiddenFor(m => m.LessonId)
+
+        @* --- TITLU QUIZ --- *@
+        <div class="card shadow-sm border-0 rounded-4 mb-4">
+            <div class="card-body p-4">
+                <label class="form-label fw-bold text-uppercase small text-muted">Titlu Quiz:</label>
+                @Html.TextBoxFor(m => m.QuizTitle, new { @class = "form-control form-control-lg rounded-pill border-primary border-opacity-25 shadow-sm", @placeholder = "Ex: Test Recapitulativ - Capitolul 1" })
+            </div>
+        </div>
+
+        @* --- LISTA ÎNTREBĂRI --- *@
+        for (int i = 0; i < Model.Questions.Count; i++)
+        {
+            <div class="card mb-4 shadow-sm border-0 rounded-4 overflow-hidden">
+                <div class="card-header bg-primary bg-opacity-10 border-0 py-3">
+                    <h5 class="m-0 fw-bold text-primary"><i class="fa fa-question-circle me-2"></i>Întrebarea @(i + 1)</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-muted text-uppercase">Enunț:</label>
+                        @Html.TextBoxFor(m => m.Questions[i].Text, new { @class = "form-control border-0 bg-light rounded-3 fw-bold py-2 px-3", @style = "font-size: 1.1rem;" })
+                    </div>
+
+                    <label class="form-label small fw-bold text-muted text-uppercase mb-3">Variante de răspuns (Bifează varianta corectă):</label>
+                    <div class="row g-3">
+                        @for (int j = 0; j < Model.Questions[i].Choices.Count; j++)
+                        {
+                            <div class="col-md-6">
+                                <div class="input-group shadow-sm rounded-pill overflow-hidden border">
+                                    <div class="input-group-text border-0 bg-white pe-0">
+                                        <div class="form-check m-0">
+                                            @Html.CheckBoxFor(m => m.Questions[i].Choices[j].IsCorrect, new { @class = "form-check-input ms-2", @title = "Marchează ca fiind corect" })
+                                        </div>
+                                    </div>
+                                    @Html.TextBoxFor(m => m.Questions[i].Choices[j].Text, new { @class = "form-control border-0 py-2 ps-3", @placeholder = "Scrie varianta de răspuns..." })
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+
+        @* --- BUTOANE ACȚIUNE --- *@
+        <div class="d-flex flex-column flex-md-row gap-3 mt-5">
+            <button type="submit" class="btn btn-success btn-lg rounded-pill px-5 fw-bold shadow-sm transition-hover">
+                <i class="fa fa-save me-2"></i>Salvează Testul în Curs
+            </button>
+            <a href="@Url.Action("Details", "Lessons", new { id = Model.LessonId })" class="btn btn-outline-secondary btn-lg rounded-pill px-5">
+                <i class="fa fa-times me-2"></i>Anulează
+            </a>
+        </div>
+    }
+</div>
+
+<style>
+    .transition-hover:hover {
+        transform: translateY(-2px);
+        transition: 0.3s;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1) !important;
+    }
+
+    .form-control:focus {
+        box-shadow: none;
+        border-color: #0d6efd;
+    }
+
+    .input-group-text .form-check-input:checked {
+        background-color: #198754;
+        border-color: #198754;
+    }
+</style>

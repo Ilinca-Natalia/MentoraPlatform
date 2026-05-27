@@ -1,0 +1,46 @@
+﻿@using Microsoft.AspNet.Identity
+@model IEnumerable<MentoraPlatform.Models.Quiz>
+
+<div class="container mt-4">
+    <h2 class="fw-bold mb-4"><i class="fa fa-tasks text-primary me-2"></i>Gestionare Teste</h2>
+
+    <div class="row">
+        @foreach (var quiz in Model)
+        {
+            // Verificăm dacă utilizatorul curent este profesorul acestui curs
+            bool isOwner = User.Identity.GetUserId() == quiz.Course.TeacherId || User.IsInRole("Admin");
+
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 border-0 shadow-sm transition-hover">
+                    <div class="card-body">
+                        <h5 class="card-title fw-bold">@quiz.Title</h5>
+                        <p class="text-muted small mb-2">Curs: @quiz.Course.Title</p>
+
+                        <span class="badge bg-soft-primary text-primary">
+                            <i class="fa fa-question-circle me-1"></i> @quiz.Questions.Count Întrebări
+                        </span>
+                    </div>
+
+                    <div class="card-footer bg-white border-0 d-flex gap-2">
+                        @if (User.IsInRole("Student"))
+                        {
+                            <a href="@Url.Action("TakeQuiz", new { id = quiz.Id })" class="btn btn-primary w-100 rounded-pill fw-bold">
+                                ÎNCEPE TESTUL
+                            </a>
+                        }
+
+                        @if (isOwner)
+                        {
+                            <a href="@Url.Action("Edit", new { id = quiz.Id })" class="btn btn-outline-warning btn-sm rounded-pill flex-fill">
+                                <i class="fa fa-edit"></i> Edit
+                            </a>
+                            <a href="@Url.Action("Delete", new { id = quiz.Id })" class="btn btn-outline-danger btn-sm rounded-pill flex-fill">
+                                <i class="fa fa-trash"></i> Șterge
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

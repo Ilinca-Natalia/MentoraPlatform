@@ -1,0 +1,30 @@
+﻿@model MentoraPlatform.Models.QuizResult
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 text-center">
+            <div class="card shadow border-0 p-5">
+                <div class="display-1 mb-3">
+                    @if (Model.Score >= 5)
+                    {
+                        <i class="fa fa-trophy text-warning"></i>
+                    }
+                    else
+                    {
+                        <i class="fa fa-redo text-danger"></i>
+                    }
+                </div>
+                <h2 class="fw-bold mb-2">Rezultatul tău</h2>
+                <div class="display-4 fw-bold text-primary mb-4">@Model.Score / 10</div>
+
+                <p class="text-muted mb-4">Testul a fost susținut pe data de @Model.DateTaken.ToString("dd MMM yyyy, HH:mm")</p>
+
+                <div class="d-grid gap-2">
+                    <a href="@Url.Action("Details", "Courses", new { id = Model.Quiz.CourseId })" class="btn btn-dark btn-lg rounded-pill">
+                        Înapoi la Curs
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

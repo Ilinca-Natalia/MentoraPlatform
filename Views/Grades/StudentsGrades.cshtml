@@ -1,0 +1,41 @@
+﻿@model IEnumerable<MentoraPlatform.Models.QuizResult>
+
+<div class="container mt-4">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-dark text-white py-3">
+            <h3 class="m-0"><i class="fa fa-users-cog me-2"></i>Catalog Note Elevi</h3>
+        </div>
+        <div class="card-body">
+            <table class="table table-striped align-middle">
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Curs</th>
+                        <th>Test</th>
+                        <th>Dată</th>
+                        <th class="text-center">Scor</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var res in Model)
+                    {
+                        <tr>
+                            <td>
+                                <div class="fw-bold">@res.Student.FirstName @res.Student.LastName</div>
+                                <small class="text-muted">@res.Student.Email</small>
+                            </td>
+                            <td>@res.Quiz.Course.Title</td>
+                            <td>@res.Quiz.Title</td>
+                            <td>@res.DateTaken.ToShortDateString()</td>
+                            <td class="text-center">
+                                <div class="badge @(res.Score >= 5 ? "bg-success" : "bg-danger") fs-6">
+                                    @res.Score
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

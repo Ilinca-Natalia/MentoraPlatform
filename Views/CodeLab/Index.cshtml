@@ -1,0 +1,65 @@
+﻿@{
+    ViewBag.Title = "Mentora CodeLab Hub";
+}
+
+<div class="container mt-5 text-center">
+    <h1 class="fw-bold mb-2">Bun venit în <span class="text-primary">CodeLab</span></h1>
+    <p class="text-muted mb-5">Alege mediul de dezvoltare în care vrei să lucrezi astăzi:</p>
+
+    <div class="row g-4 justify-content-center">
+        @* Card pentru Web (HTML/CSS/JS) *@
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm hover-card rounded-4 p-3">
+                <div class="card-body">
+                    <div class="icon-box bg-primary bg-opacity-10 rounded-circle mb-3 mx-auto" style="width: 70px; height: 70px; line-height: 70px;">
+                        <i class="fa fa-globe fa-2x text-primary"></i>
+                    </div>
+                    <h4 class="fw-bold">Web Development</h4>
+                    <p class="small text-muted">HTML5, CSS3 și JavaScript. Ideal pentru interfețe web.</p>
+                    <a href="@Url.Action("WebEditor", "CodeLab")" class="btn btn-primary w-100 rounded-pill">Deschide Editorul</a>
+                </div>
+            </div>
+        </div>
+
+        @* Card pentru SQL *@
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm hover-card rounded-4 p-3">
+                <div class="card-body">
+                    <div class="icon-box bg-success bg-opacity-10 rounded-circle mb-3 mx-auto" style="width: 70px; height: 70px; line-height: 70px;">
+                        <i class="fa fa-database fa-2x text-success"></i>
+                    </div>
+                    <h4 class="fw-bold">SQL Playground</h4>
+                    <p class="small text-muted">Exersează interogări pe baze de date reale (SELECT, JOIN, etc).</p>
+                    <a href="@Url.Action("SqlEditor", "CodeLab")" class="btn btn-success w-100 rounded-pill">Deschide Consola</a>
+                </div>
+            </div>
+        </div>
+
+        @* Card pentru Algoritmi (C#/Python - Mock) *@
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm hover-card rounded-4 p-3">
+                <div class="card-body">
+                    <div class="icon-box bg-warning bg-opacity-10 rounded-circle mb-3 mx-auto" style="width: 70px; height: 70px; line-height: 70px;">
+                        <i class="fa fa-terminal fa-2x text-warning"></i>
+                    </div>
+                    <h4 class="fw-bold">Algoritmi & Logică</h4>
+                    <p class="small text-muted">Scrie cod C# sau Python și testează logica programelor.</p>
+                    <a href="@Url.Action("AlgorithmEditor", "CodeLab")" class="btn btn-warning w-100 rounded-pill">Deschide Terminalul</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .hover-card {
+        transition: all 0.3s ease;
+        border: 1px solid transparent !important;
+    }
+
+        .hover-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1) !important;
+            border-color: #0d6efd !important;
+        }
+</style>

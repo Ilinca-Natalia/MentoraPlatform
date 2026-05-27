@@ -1,0 +1,24 @@
+﻿@model MentoraPlatform.Models.ApplicationUser
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 text-center">
+            <div class="card shadow-lg border-0 p-4">
+                <i class="fa fa-user-minus fa-4x text-danger mb-3"></i>
+                <h2 class="fw-bold">Confirmă Eliminarea</h2>
+                <p class="text-muted">Ești sigur că vrei să ștergi contul lui:</p>
+                <h4 class="text-dark">@Model.FirstName @Model.LastName</h4>
+                <p class="small text-danger">Atenție: Toate datele acestui utilizator (cursuri, note) vor fi pierdute!</p>
+
+                <div class="d-flex justify-content-center gap-3 mt-4">
+                    @using (Html.BeginForm())
+                    {
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-danger px-4 fw-bold shadow">ȘTERGE DEFINITIV</button>
+                    }
+                    <a href="@Url.Action("Index")" class="btn btn-outline-secondary px-4">Anulează</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

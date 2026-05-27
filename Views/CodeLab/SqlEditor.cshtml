@@ -1,0 +1,188 @@
+﻿@{
+    ViewBag.Title = "SQL Playground";
+}
+
+<div class="container-fluid py-3">
+    @* Header *@
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold m-0"><i class="fa fa-database text-success me-2"></i>SQL Playground</h4>
+        <div class="btn-group">
+            <button onclick="runSqlQuery()" class="btn btn-success px-4 rounded-pill me-2">
+                <i class="fa fa-play me-2"></i>Execută Query
+            </button>
+            @* Buton Export adăugat *@
+            <button onclick="exportSqlResults()" class="btn btn-outline-info px-4 rounded-pill me-2">
+                <i class="fa fa-file-excel me-2"></i>Exportă CSV
+            </button>
+            <a href="@Url.Action("Index")" class="btn btn-outline-secondary rounded-pill">Înapoi</a>
+        </div>
+    </div>
+
+    <div class="row">
+        @* Coloana Stângă: Schema *@
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 mb-3">
+                <div class="card-header bg-dark text-white fw-bold d-flex justify-content-between align-items-center">
+                    <span class="small"><i class="fa fa-sitemap me-2"></i>EXPLORATOR TABELE</span>
+                    <span class="badge bg-primary" style="font-size: 0.6rem;">SQL SERVER</span>
+                </div>
+                <div class="accordion accordion-flush" id="schemaAccordion">
+
+                    @* Tabel: Sandbox_Produse *@
+                    <div class="accordion-item border-bottom">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed py-2 px-3 small fw-bold bg-light" type="button" data-bs-toggle="collapse" data-bs-target="#tabProduse">
+                                <i class="fa fa-table me-2 text-primary"></i>Sandbox_Produse
+                            </button>
+                        </h2>
+                        <div id="tabProduse" class="accordion-collapse collapse" data-bs-parent="#schemaAccordion">
+                            <div class="p-0">
+                                <table class="table table-sm table-borderless mb-0" style="font-size: 0.75rem;">
+                                    <tbody>
+                                        <tr><td class="ps-3"><i class="fa fa-key text-warning me-1"></i> Id</td><td class="text-end pe-3 text-muted">int</td></tr>
+                                        <tr><td class="ps-3">NumeProdus</td><td class="text-end pe-3 text-muted">nvarchar</td></tr>
+                                        <tr><td class="ps-3">Pret</td><td class="text-end pe-3 text-muted">decimal</td></tr>
+                                        <tr><td class="ps-3">CategorieId</td><td class="text-end pe-3 text-muted">int (FK)</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    @* Tabel: Sandbox_Comenzi *@
+                    <div class="accordion-item border-bottom">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed py-2 px-3 small fw-bold bg-light" type="button" data-bs-toggle="collapse" data-bs-target="#tabComenzi">
+                                <i class="fa fa-table me-2 text-success"></i>Sandbox_Comenzi
+                            </button>
+                        </h2>
+                        <div id="tabComenzi" class="accordion-collapse collapse" data-bs-parent="#schemaAccordion">
+                            <div class="p-0">
+                                <table class="table table-sm table-borderless mb-0" style="font-size: 0.75rem;">
+                                    <tbody>
+                                        <tr><td class="ps-3"><i class="fa fa-key text-warning me-1"></i> Id</td><td class="text-end pe-3 text-muted">int</td></tr>
+                                        <tr><td class="ps-3">DataComanda</td><td class="text-end pe-3 text-muted">datetime</td></tr>
+                                        <tr><td class="ps-3">Status</td><td class="text-end pe-3 text-muted">nvarchar</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm bg-dark text-white p-3">
+                <h6 class="fw-bold small mb-2 text-warning"><i class="fa fa-terminal me-2"></i>Quick Help:</h6>
+                <p class="mb-0" style="font-size: 0.7rem;">Folosiți <code>JOIN</code> pentru a corela produsele cu comenzile.</p>
+            </div>
+        </div>
+
+        @* Coloana Dreaptă: Editor *@
+        <div class="col-md-9">
+            <div class="card shadow-sm border-0 bg-dark mb-3">
+                <textarea id="sqlQuery" class="form-control bg-dark text-success border-0 p-4"
+                          style="height: 180px; font-family: 'Consolas', monospace; font-size: 1.1rem;">SELECT * FROM Sandbox_Produse</textarea>
+            </div>
+
+            <div id="errorAlert" class="alert alert-danger d-none" role="alert"></div>
+
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white fw-bold d-flex justify-content-between">
+                    <span>Rezultatul Interogării</span>
+                    <span id="rowCount" class="badge bg-secondary">0 rânduri</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive" style="max-height: 400px;">
+                        <table id="resultTable" class="table table-hover table-striped mb-0">
+                            <thead class="table-light"><tr id="tableHeader"></tr></thead>
+                            <tbody id="tableBody"></tbody>
+                        </table>
+                    </div>
+                    <div id="noData" class="p-5 text-center text-muted">
+                        <i class="fa fa-table fa-3x mb-3 opacity-25"></i>
+                        <p>Executați un query pentru a vedea datele.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function runSqlQuery() {
+        const query = document.getElementById('sqlQuery').value;
+        const errorAlert = document.getElementById('errorAlert');
+        const headerRow = document.getElementById('tableHeader');
+        const bodyRow = document.getElementById('tableBody');
+        const noData = document.getElementById('noData');
+        const rowCountBadge = document.getElementById('rowCount');
+
+        errorAlert.classList.add('d-none');
+        headerRow.innerHTML = "";
+        bodyRow.innerHTML = "";
+        noData.classList.remove('d-none');
+        rowCountBadge.textContent = "0 rânduri";
+
+        $.post('@Url.Action("ExecuteSql")', { query: query }, function (data) {
+            if (data.success) {
+                if (data.rows && data.rows.length > 0) {
+                    noData.classList.add('d-none');
+                    rowCountBadge.textContent = data.rows.length + " rânduri";
+
+                    data.columns.forEach(col => {
+                        const th = document.createElement('th');
+                        th.textContent = col;
+                        headerRow.appendChild(th);
+                    });
+
+                    data.rows.forEach(row => {
+                        const tr = document.createElement('tr');
+                        data.columns.forEach(col => {
+                            const td = document.createElement('td');
+                            let cellValue = row[col];
+                            td.textContent = (cellValue !== null && cellValue !== undefined) ? cellValue : "NULL";
+                            tr.appendChild(td);
+                        });
+                        bodyRow.appendChild(tr);
+                    });
+                } else {
+                    noData.innerHTML = '<div class="p-5 text-center text-muted"><p>Query executat (0 rezultate).</p></div>';
+                }
+            } else {
+                errorAlert.textContent = "Eroare: " + data.message;
+                errorAlert.classList.remove('d-none');
+            }
+        });
+    }
+
+    function exportSqlResults() {
+        const table = document.getElementById('resultTable');
+        const rows = table.querySelectorAll('tr');
+
+        if (rows.length <= 1 && document.getElementById('tableHeader').children.length === 0) {
+            alert("Nu există date de exportat! Executați un query mai întâi.");
+            return;
+        }
+
+        let csv = [];
+        // Parcurgem toate rândurile (header + body)
+        for (let i = 0; i < rows.length; i++) {
+            let row = [], cols = rows[i].querySelectorAll('td, th');
+            for (let j = 0; j < cols.length; j++) {
+                // Curățăm textul de virgule interne pentru a nu strica formatul CSV
+                let data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, "").replace(/,/g, ";");
+                row.push(data);
+            }
+            if (row.length > 0) csv.push(row.join(","));
+        }
+
+        const csvContent = "data:text/csv;charset=utf-8," + csv.join("\n");
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "export_mentora_sql.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+</script>

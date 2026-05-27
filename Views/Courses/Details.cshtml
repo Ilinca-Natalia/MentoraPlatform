@@ -1,0 +1,212 @@
+﻿@using Microsoft.AspNet.Identity
+@model MentoraPlatform.Models.Course
+
+@* Font Awesome & Select2 CSS *@
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+@{
+    ViewBag.Title = Model.Title;
+    var currentUserId = User.Identity.GetUserId();
+    bool isAdmin = User.IsInRole("Admin");
+    bool isTeacherOwner = Request.IsAuthenticated && (currentUserId == Model.TeacherId);
+    bool isOwner = isTeacherOwner || isAdmin;
+    // Un elev are acces dacă este înscris. Profesorul/Adminul are acces mereu.
+    bool isEnrolled = Model.EnrolledStudents != null && Model.EnrolledStudents.Any(s => s.Id == currentUserId);
+    bool hasAccess = isEnrolled || isOwner;
+
+    var completedIds = ViewBag.CompletedLessonIds as List<int> ?? new List<int>();
+}
+
+<style>
+    /* Stil pentru Select2 Searchable Dropdown */
+    .select2-container--default .select2-selection--single {
+        border-radius: 8px !important;
+        height: 38px !important;
+        border: 1px solid #ced4da !important;
+    }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 36px !important;
+            padding-left: 12px !important;
+            text-align: left !important;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 36px !important;
+        }
+
+    .select2-dropdown {
+        border-radius: 8px !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+</style>
+
+<div class="container mt-4 pb-5">
+    @* --- MESAJE NOTIFICARE --- *@
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show rounded-pill px-4 shadow-sm" role="alert">
+            <i class="fa fa-check-circle me-2"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @* --- HEADER CURS --- *@
+    <div class="p-5 mb-4 bg-dark text-white rounded-4 shadow-lg text-start" style="background: linear-gradient(45deg, #1a2a6c, #b21f1f, #fdbb2d);">
+        <h1 class="display-4 fw-bold">@Model.Title</h1>
+        <p class="fs-5 mt-3"><i class="fa fa-user-tie me-2 text-info"></i>Mentor: @(Model.Teacher?.FirstName) @(Model.Teacher?.LastName)</p>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 text-start">
+            @* --- DESCRIERE --- *@
+            <div class="card border-0 shadow-sm mb-4 rounded-3">
+                <div class="card-body p-4">
+                    <h4 class="fw-bold mb-3 text-primary"><i class="fa fa-align-left me-2"></i>Descriere</h4>
+                    <p class="text-secondary" style="white-space: pre-line;">@Model.Description</p>
+                </div>
+            </div>
+
+            @* --- PROGRAMA (CURRICULUM) --- *@
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="fw-bold mb-0"><i class="fa fa-stream text-primary me-2"></i>Curriculum</h4>
+                @if (isOwner)
+                {
+                    <a href="@Url.Action("Create", "Lessons", new { courseId = Model.Id })" class="btn btn-sm btn-success rounded-pill px-3 shadow-sm">
+                        <i class="fa fa-plus me-1"></i> Adaugă Lecție
+                    </a>
+                }
+            </div>
+
+            <div class="list-group shadow-sm rounded-3">
+                @if (Model.Lessons != null && Model.Lessons.Any())
+                {
+                    foreach (var lesson in Model.Lessons.OrderBy(l => l.Id))
+                    {
+                        bool isDone = completedIds.Contains(lesson.Id);
+                        <div class="list-group-item d-flex justify-content-between align-items-center p-3">
+                            <div class="d-flex align-items-center text-start">
+                                <i class="fa @(isDone ? "fa-check-circle text-success" : "fa-circle-play text-primary") fs-5 me-3"></i>
+                                <h6 class="mb-0 @(isDone ? "text-muted text-decoration-line-through" : "fw-bold")">@lesson.Title</h6>
+                            </div>
+
+                            <div class="d-flex gap-2 align-items-center">
+                                @if (hasAccess)
+                                {
+                                    <a href="@Url.Action("Details", "Lessons", new { id = lesson.Id })" class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm">Învață</a>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-light text-muted rounded-pill"><i class="fa fa-lock me-1"></i> Privat</span>
+                                }
+
+                                @if (isOwner)
+                                {
+                                    <div class="dropdown">
+                                        <button class="btn btn-link text-muted p-0" data-bs-toggle="dropdown"><i class="fa fa-ellipsis-v"></i></button>
+                                        <ul class="dropdown-menu shadow border-0">
+                                            <li><a class="dropdown-item" href="@Url.Action("Edit", "Lessons", new { id = lesson.Id })"><i class="fa fa-edit me-2"></i>Editează</a></li>
+                                            <li><a class="dropdown-item text-danger" href="@Url.Action("Delete", "Lessons", new { id = lesson.Id })"><i class="fa fa-trash me-2"></i>Șterge</a></li>
+                                        </ul>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="list-group-item text-center py-4 text-muted small">Nu există lecții adăugate încă.</div>
+                }
+            </div>
+        </div>
+
+        @* --- SIDEBAR --- *@
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 p-4 text-center sticky-top" style="top: 20px;">
+                @if (isOwner)
+                {
+                    <div class="text-start p-3 bg-light rounded-3 border">
+                        <h6 class="fw-bold mb-3 text-primary"><i class="fa fa-user-plus me-2"></i>Select Students</h6>
+
+                        @using (Html.BeginForm("AddStudent", "Courses", FormMethod.Post))
+                        {
+                            @Html.AntiForgeryToken()
+                            @Html.Hidden("courseId", Model.Id)
+
+                            <div class="mb-3">
+                                <select name="studentEmail" id="selectStudentAI" class="form-control">
+                                    <option value="">Select Students</option>
+                                    @if (ViewBag.RawStudentList != null)
+                                    {
+                                        foreach (var student in (IEnumerable<MentoraPlatform.Models.ApplicationUser>)ViewBag.RawStudentList)
+                                        {
+                                            <option value="@student.Email">@student.FirstName @student.LastName</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-sm w-100 rounded-pill fw-bold shadow-sm">
+                                ÎNSCRIE ACUM
+                            </button>
+                        }
+
+                        <button class="btn btn-outline-dark btn-sm w-100 rounded-pill fw-bold mt-3 shadow-sm" type="button" data-bs-toggle="collapse" data-bs-target="#listElevi">
+                            <i class="fa fa-users me-2"></i>Elevi înscriși (@(Model.EnrolledStudents?.Count ?? 0))
+                        </button>
+
+                        <div class="collapse mt-2" id="listElevi">
+                            <div class="card card-body p-2 border-0 bg-white shadow-sm" style="max-height: 200px; overflow-y: auto;">
+                                @if (Model.EnrolledStudents != null && Model.EnrolledStudents.Any())
+                                {
+                                    foreach (var s in Model.EnrolledStudents)
+                                    {
+                                        <div class="d-flex justify-content-between align-items-center border-bottom py-2 px-1">
+                                            <small class="fw-bold text-dark">@s.FirstName @s.LastName</small>
+                                            @using (Html.BeginForm("DeleteStudent", "Courses", FormMethod.Post, new { @class = "d-inline" }))
+                                            {
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="courseId" value="@Model.Id" />
+                                                <input type="hidden" name="studentId" value="@s.Id" />
+                                                <button type="submit" class="btn btn-link text-danger p-0 ms-2" onclick="return confirm('Elimini elevul?')">
+                                                    <i class="fa fa-trash-can fs-6"></i>
+                                                </button>
+                                            }
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                @* --- TESTARE AI --- *@
+                @if (hasAccess)
+                {
+                    <div class="mt-4">
+                        <p class="text-start mb-2 small"><i class="fa fa-robot text-success me-2"></i> Evaluare disponibilă</p>
+                        <a href="@Url.Action("Index", "Quizzes", new { courseId = Model.Id })" class="btn btn-warning w-100 rounded-pill fw-bold shadow-sm py-2">
+                            <i class="fa fa-pencil-alt me-2"></i> TESTARE AI
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('#selectStudentAI').select2({
+                placeholder: "Select Students",
+                allowClear: true,
+                width: '100%'
+            });
+        });
+    </script>
+}
