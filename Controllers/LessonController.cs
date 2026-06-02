@@ -1,5 +1,5 @@
 ﻿using MentoraPlatform.Models;
-using Microsoft.AspNet.Identity; 
+using Microsoft.AspNet.Identity;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
@@ -8,6 +8,7 @@ using System.Linq;
 using System.Net;
 using System.Web;
 using System.Web.Mvc;
+
 namespace MentoraPlatform.Controllers
 {
     [Authorize]
@@ -20,7 +21,7 @@ namespace MentoraPlatform.Controllers
         {
             if (id == null) return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
 
-            // ADĂUGĂM .Include(l => l.LessonAttachments) ca să vedem fișierele!
+            // Încărcăm lecția împreună cu cursul și atașamentele sale din baza de date
             var lesson = db.Lessons
                            .Include(l => l.Course)
                            .Include(l => l.LessonAttachments)
@@ -54,7 +55,8 @@ namespace MentoraPlatform.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Professor, Admin")]
-        public ActionResult Create([Bind(Include = "Title,Content,CourseId,VideoUrl")] Lesson lesson, IEnumerable<HttpPostedFileBase> files)
+        // REZOLVAT: Parametrul pentru fișiere a fost redenumit în "attachments" pentru a se potrivi cu interfața HTML
+        public ActionResult Create([Bind(Include = "Title,Content,CourseId,VideoUrl")] Lesson lesson, IEnumerable<HttpPostedFileBase> attachments)
         {
             if (ModelState.IsValid)
             {
@@ -64,23 +66,23 @@ namespace MentoraPlatform.Controllers
                     lesson.VideoUrl = lesson.VideoUrl.Replace("watch?v=", "embed/");
                 }
 
-                // 2. ADĂUGĂM lecția în baza de date (Această linie lipsea probabil!)
+                // 2. Salvăm lecția în baza de date pentru a genera ID-ul acesteia
                 db.Lessons.Add(lesson);
-                db.SaveChanges(); // Salvăm prima dată pentru a genera ID-ul lecției
+                db.SaveChanges();
 
-                // 3. Procesăm fișierele încărcate (doar dacă există)
-                if (files != null)
+                // 3. Procesăm fișierele încărcate (utilizând noul nume de parametru)
+                if (attachments != null)
                 {
                     string uploadDir = "~/Uploads/Lessons/";
                     string physicalPath = Server.MapPath(uploadDir);
 
-                    // Creăm folderul dacă nu există
+                    // Creăm folderul pe server dacă nu există fizic
                     if (!Directory.Exists(physicalPath))
                     {
                         Directory.CreateDirectory(physicalPath);
                     }
 
-                    foreach (var file in files)
+                    foreach (var file in attachments)
                     {
                         if (file != null && file.ContentLength > 0)
                         {
@@ -92,19 +94,19 @@ namespace MentoraPlatform.Controllers
                             {
                                 FileName = file.FileName,
                                 FilePath = "/Uploads/Lessons/" + fileName,
-                                LessonId = lesson.Id, // Folosim ID-ul lecției proaspăt salvate
+                                LessonId = lesson.Id, // Se leagă automat de ID-ul lecției proaspăt generate
                                 FileType = Path.GetExtension(file.FileName)
                             };
                             db.LessonAttachments.Add(attachment);
                         }
                     }
-                    db.SaveChanges(); // Salvăm atașamentele
+                    db.SaveChanges(); // Salvăm atașamentele în baza de date
                 }
 
                 return RedirectToAction("Details", "Courses", new { id = lesson.CourseId });
             }
 
-            // DACĂ MODELUL NU ESTE VALID, repopulăm datele pentru View
+            // Repopulăm datele în caz de eroare la validare
             var course = db.Courses.Find(lesson.CourseId);
             ViewBag.CourseTitle = course?.Title;
             ViewBag.CourseId = lesson.CourseId;
@@ -121,7 +123,6 @@ namespace MentoraPlatform.Controllers
             var lesson = db.Lessons.Include(l => l.Course).FirstOrDefault(l => l.Id == id);
             if (lesson == null) return HttpNotFound();
 
-            // Verificăm dacă profesorul deține cursul din care face parte lecția
             if (lesson.Course.TeacherId != User.Identity.GetUserId() && !User.IsInRole("Admin"))
                 return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
 
@@ -131,18 +132,50 @@ namespace MentoraPlatform.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Professor, Admin")]
-        // AM ADĂUGAT VideoUrl în listă!
-        public ActionResult Edit([Bind(Include = "Id,Title,Content,CourseId,VideoUrl")] Lesson lesson)
+        // REZOLVAT: Am adăugat suportul pentru încărcarea de fișiere adiționale și pe ecranul de Editare
+        public ActionResult Edit([Bind(Include = "Id,Title,Content,CourseId,VideoUrl")] Lesson lesson, IEnumerable<HttpPostedFileBase> attachments)
         {
             if (ModelState.IsValid)
             {
-                // Curățăm link-ul de YouTube și la editare!
+                // Curățăm link-ul de YouTube
                 if (!string.IsNullOrEmpty(lesson.VideoUrl))
                 {
                     lesson.VideoUrl = lesson.VideoUrl.Replace("watch?v=", "embed/");
                 }
 
                 db.Entry(lesson).State = EntityState.Modified;
+
+                // Salvăm noile atașamente încărcate la editare (dacă există)
+                if (attachments != null)
+                {
+                    string uploadDir = "~/Uploads/Lessons/";
+                    string physicalPath = Server.MapPath(uploadDir);
+
+                    if (!Directory.Exists(physicalPath))
+                    {
+                        Directory.CreateDirectory(physicalPath);
+                    }
+
+                    foreach (var file in attachments)
+                    {
+                        if (file != null && file.ContentLength > 0)
+                        {
+                            string fileName = Guid.NewGuid() + Path.GetExtension(file.FileName);
+                            string path = Path.Combine(physicalPath, fileName);
+                            file.SaveAs(path);
+
+                            var attachment = new LessonAttachment
+                            {
+                                FileName = file.FileName,
+                                FilePath = "/Uploads/Lessons/" + fileName,
+                                LessonId = lesson.Id,
+                                FileType = Path.GetExtension(file.FileName)
+                            };
+                            db.LessonAttachments.Add(attachment);
+                        }
+                    }
+                }
+
                 db.SaveChanges();
                 return RedirectToAction("Details", "Courses", new { id = lesson.CourseId });
             }
@@ -183,7 +216,6 @@ namespace MentoraPlatform.Controllers
             var userId = User.Identity.GetUserId();
             var lesson = db.Lessons.Find(id);
 
-            // Verificăm dacă nu a fost deja marcată
             var existing = db.UserLessonProgresses.FirstOrDefault(p => p.UserId == userId && p.LessonId == id);
             if (existing == null)
             {
@@ -198,6 +230,7 @@ namespace MentoraPlatform.Controllers
 
             return RedirectToAction("Details", new { id = id });
         }
+
         protected override void Dispose(bool disposing)
         {
             if (disposing) db.Dispose();

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web;
@@ -15,6 +16,7 @@ namespace MentoraPlatform.Controllers
     {
         private ApplicationSignInManager _signInManager;
         private ApplicationUserManager _userManager;
+        private ApplicationDbContext db = new ApplicationDbContext();
 
         public ManageController()
         {
@@ -32,9 +34,9 @@ namespace MentoraPlatform.Controllers
             {
                 return _signInManager ?? HttpContext.GetOwinContext().Get<ApplicationSignInManager>();
             }
-            private set 
-            { 
-                _signInManager = value; 
+            private set
+            {
+                _signInManager = value;
             }
         }
 
@@ -50,20 +52,43 @@ namespace MentoraPlatform.Controllers
             }
         }
 
-        //
         // GET: /Manage/Index
         public async Task<ActionResult> Index(ManageMessageId? message)
         {
             ViewBag.StatusMessage =
-                message == ManageMessageId.ChangePasswordSuccess ? "Your password has been changed."
-                : message == ManageMessageId.SetPasswordSuccess ? "Your password has been set."
-                : message == ManageMessageId.SetTwoFactorSuccess ? "Your two-factor authentication provider has been set."
-                : message == ManageMessageId.Error ? "An error has occurred."
-                : message == ManageMessageId.AddPhoneSuccess ? "Your phone number was added."
-                : message == ManageMessageId.RemovePhoneSuccess ? "Your phone number was removed."
+                message == ManageMessageId.ChangePasswordSuccess ? "Parola dumneavoastră a fost modificată cu succes."
+                : message == ManageMessageId.SetPasswordSuccess ? "Parola locală a fost configurată."
+                : message == ManageMessageId.SetTwoFactorSuccess ? "Autentificarea în doi pași a fost setată."
+                : message == ManageMessageId.Error ? "A apărut o eroare neașteptată."
+                : message == ManageMessageId.AddPhoneSuccess ? "Numărul de telefon a fost adăugat."
+                : message == ManageMessageId.RemovePhoneSuccess ? "Numărul de telefon a fost eliminat."
                 : "";
 
             var userId = User.Identity.GetUserId();
+
+            // NOTIFICĂRI PROFESOR: Trimitem cererile în așteptare pentru cursurile pe care le predă profesorul logat
+            if (User.IsInRole("Professor"))
+            {
+                var pendingRequests = db.EnrollmentRequests
+                                         .Include(r => r.Student)
+                                         .Include(r => r.Course)
+                                         .Where(r => r.Course.TeacherId == userId && r.IsPending)
+                                         .OrderByDescending(r => r.RequestDate)
+                                         .ToList();
+                ViewBag.PendingRequests = pendingRequests;
+            }
+
+            // NOTIFICĂRI STUDENT: Căutăm cursurile la care a primit acces aprobat recent pentru a-l felicita în tablou
+            if (User.IsInRole("Student"))
+            {
+                var approvedEnrollments = db.EnrollmentRequests
+                                            .Include(r => r.Course)
+                                            .Where(r => r.StudentId == userId && !r.IsPending && r.IsApproved)
+                                            .OrderByDescending(r => r.RequestDate)
+                                            .ToList();
+                ViewBag.ApprovedEnrollments = approvedEnrollments;
+            }
+
             var model = new IndexViewModel
             {
                 HasPassword = HasPassword(),
@@ -75,7 +100,6 @@ namespace MentoraPlatform.Controllers
             return View(model);
         }
 
-        //
         // POST: /Manage/RemoveLogin
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -99,15 +123,12 @@ namespace MentoraPlatform.Controllers
             return RedirectToAction("ManageLogins", new { Message = message });
         }
 
-
-        //
         // GET: /Manage/ChangePassword
         public ActionResult ChangePassword()
         {
             return View();
         }
 
-        //
         // POST: /Manage/ChangePassword
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -131,14 +152,12 @@ namespace MentoraPlatform.Controllers
             return View(model);
         }
 
-        //
         // GET: /Manage/SetPassword
         public ActionResult SetPassword()
         {
             return View();
         }
 
-        //
         // POST: /Manage/SetPassword
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -158,70 +177,32 @@ namespace MentoraPlatform.Controllers
                 }
                 AddErrors(result);
             }
-
-            // If we got this far, something failed, redisplay form
             return View(model);
-        }
-
-        //
-        // GET: /Manage/ManageLogins
-        public async Task<ActionResult> ManageLogins(ManageMessageId? message)
-        {
-            ViewBag.StatusMessage =
-                message == ManageMessageId.RemoveLoginSuccess ? "The external login was removed."
-                : message == ManageMessageId.Error ? "An error has occurred."
-                : "";
-            var user = await UserManager.FindByIdAsync(User.Identity.GetUserId());
-            if (user == null)
-            {
-                return View("Error");
-            }
-            var userLogins = await UserManager.GetLoginsAsync(User.Identity.GetUserId());
-            var otherLogins = AuthenticationManager.GetExternalAuthenticationTypes().Where(auth => userLogins.All(ul => auth.AuthenticationType != ul.LoginProvider)).ToList();
-            ViewBag.ShowRemoveButton = user.PasswordHash != null || userLogins.Count > 1;
-            return View(new ManageLoginsViewModel
-            {
-                CurrentLogins = userLogins,
-                OtherLogins = otherLogins
-            });
-        }
-
-        //
-        // POST: /Manage/LinkLogin
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult LinkLogin(string provider)
-        {
-            // Request a redirect to the external login provider to link a login for the current user
-            return new AccountController.ChallengeResult(provider, Url.Action("LinkLoginCallback", "Manage"), User.Identity.GetUserId());
-        }
-
-        //
-        // GET: /Manage/LinkLoginCallback
-        public async Task<ActionResult> LinkLoginCallback()
-        {
-            var loginInfo = await AuthenticationManager.GetExternalLoginInfoAsync(XsrfKey, User.Identity.GetUserId());
-            if (loginInfo == null)
-            {
-                return RedirectToAction("ManageLogins", new { Message = ManageMessageId.Error });
-            }
-            var result = await UserManager.AddLoginAsync(User.Identity.GetUserId(), loginInfo.Login);
-            return result.Succeeded ? RedirectToAction("ManageLogins") : RedirectToAction("ManageLogins", new { Message = ManageMessageId.Error });
         }
 
         protected override void Dispose(bool disposing)
         {
-            if (disposing && _userManager != null)
+            if (disposing)
             {
-                _userManager.Dispose();
-                _userManager = null;
+                if (_userManager != null)
+                {
+                    _userManager.Dispose();
+                    _userManager = null;
+                }
+                if (_signInManager != null)
+                {
+                    _signInManager.Dispose();
+                    _signInManager = null;
+                }
+                if (db != null)
+                {
+                    db.Dispose();
+                }
             }
-
             base.Dispose(disposing);
         }
 
-#region Helpers
-        // Used for XSRF protection when adding external logins
+        #region Helpers
         private const string XsrfKey = "XsrfId";
 
         private IAuthenticationManager AuthenticationManager
@@ -250,16 +231,6 @@ namespace MentoraPlatform.Controllers
             return false;
         }
 
-        private bool HasPhoneNumber()
-        {
-            var user = UserManager.FindById(User.Identity.GetUserId());
-            if (user != null)
-            {
-                return user.PhoneNumber != null;
-            }
-            return false;
-        }
-
         public enum ManageMessageId
         {
             AddPhoneSuccess,
@@ -270,7 +241,6 @@ namespace MentoraPlatform.Controllers
             RemovePhoneSuccess,
             Error
         }
-
-#endregion
+        #endregion
     }
 }

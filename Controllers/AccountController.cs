@@ -22,7 +22,7 @@ namespace MentoraPlatform.Controllers
         {
         }
 
-        public AccountController(ApplicationUserManager userManager, ApplicationSignInManager signInManager )
+        public AccountController(ApplicationUserManager userManager, ApplicationSignInManager signInManager)
         {
             UserManager = userManager;
             SignInManager = signInManager;
@@ -34,9 +34,9 @@ namespace MentoraPlatform.Controllers
             {
                 return _signInManager ?? HttpContext.GetOwinContext().Get<ApplicationSignInManager>();
             }
-            private set 
-            { 
-                _signInManager = value; 
+            private set
+            {
+                _signInManager = value;
             }
         }
 
@@ -52,7 +52,6 @@ namespace MentoraPlatform.Controllers
             }
         }
 
-        //
         // GET: /Account/Login
         [AllowAnonymous]
         public ActionResult Login(string returnUrl)
@@ -61,7 +60,6 @@ namespace MentoraPlatform.Controllers
             return View();
         }
 
-        //
         // POST: /Account/Login
         [HttpPost]
         [AllowAnonymous]
@@ -73,8 +71,6 @@ namespace MentoraPlatform.Controllers
                 return View(model);
             }
 
-            // This doesn't count login failures towards account lockout
-            // To enable password failures to trigger account lockout, change to shouldLockout: true
             var result = await SignInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, shouldLockout: false);
             switch (result)
             {
@@ -91,7 +87,6 @@ namespace MentoraPlatform.Controllers
             }
         }
 
-        //
         // GET: /Account/Register
         [AllowAnonymous]
         public ActionResult Register()
@@ -99,7 +94,6 @@ namespace MentoraPlatform.Controllers
             return View();
         }
 
-        //
         // POST: /Account/Register
         [HttpPost]
         [AllowAnonymous]
@@ -108,7 +102,7 @@ namespace MentoraPlatform.Controllers
         {
             if (ModelState.IsValid)
             {
-                // Creăm obiectul user cu noile câmpuri
+                // Creăm utilizatorul fără rol selectat
                 var user = new ApplicationUser
                 {
                     UserName = model.Email,
@@ -120,8 +114,8 @@ namespace MentoraPlatform.Controllers
                 var result = await UserManager.CreateAsync(user, model.Password);
                 if (result.Succeeded)
                 {
-                    // ATRIBUIM ROLUL SELECTAT
-                    await UserManager.AddToRoleAsync(user.Id, model.SelectedRole);
+                    // MODIFICAT: Toți utilizatorii noi devin automat "Student"
+                    await UserManager.AddToRoleAsync(user.Id, "Student");
 
                     await SignInManager.SignInAsync(user, isPersistent: false, rememberBrowser: false);
                     return RedirectToAction("Index", "Courses");
@@ -131,7 +125,6 @@ namespace MentoraPlatform.Controllers
             return View(model);
         }
 
-        //
         // GET: /Account/ConfirmEmail
         [AllowAnonymous]
         public async Task<ActionResult> ConfirmEmail(string userId, string code)
@@ -144,7 +137,6 @@ namespace MentoraPlatform.Controllers
             return View(result.Succeeded ? "ConfirmEmail" : "Error");
         }
 
-        //
         // GET: /Account/ForgotPassword
         [AllowAnonymous]
         public ActionResult ForgotPassword()
@@ -152,7 +144,6 @@ namespace MentoraPlatform.Controllers
             return View();
         }
 
-        //
         // POST: /Account/ForgotPassword
         [HttpPost]
         [AllowAnonymous]
@@ -164,23 +155,12 @@ namespace MentoraPlatform.Controllers
                 var user = await UserManager.FindByNameAsync(model.Email);
                 if (user == null || !(await UserManager.IsEmailConfirmedAsync(user.Id)))
                 {
-                    // Don't reveal that the user does not exist or is not confirmed
                     return View("ForgotPasswordConfirmation");
                 }
-
-                // For more information on how to enable account confirmation and password reset please visit https://go.microsoft.com/fwlink/?LinkID=320771
-                // Send an email with this link
-                // string code = await UserManager.GeneratePasswordResetTokenAsync(user.Id);
-                // var callbackUrl = Url.Action("ResetPassword", "Account", new { userId = user.Id, code = code }, protocol: Request.Url.Scheme);		
-                // await UserManager.SendEmailAsync(user.Id, "Reset Password", "Please reset your password by clicking <a href=\"" + callbackUrl + "\">here</a>");
-                // return RedirectToAction("ForgotPasswordConfirmation", "Account");
             }
-
-            // If we got this far, something failed, redisplay form
             return View(model);
         }
 
-        //
         // GET: /Account/ForgotPasswordConfirmation
         [AllowAnonymous]
         public ActionResult ForgotPasswordConfirmation()
@@ -188,7 +168,6 @@ namespace MentoraPlatform.Controllers
             return View();
         }
 
-        //
         // GET: /Account/ResetPassword
         [AllowAnonymous]
         public ActionResult ResetPassword(string code)
@@ -196,7 +175,6 @@ namespace MentoraPlatform.Controllers
             return code == null ? View("Error") : View();
         }
 
-        //
         // POST: /Account/ResetPassword
         [HttpPost]
         [AllowAnonymous]
@@ -210,7 +188,6 @@ namespace MentoraPlatform.Controllers
             var user = await UserManager.FindByNameAsync(model.Email);
             if (user == null)
             {
-                // Don't reveal that the user does not exist
                 return RedirectToAction("ResetPasswordConfirmation", "Account");
             }
             var result = await UserManager.ResetPasswordAsync(user.Id, model.Code, model.Password);
@@ -222,7 +199,6 @@ namespace MentoraPlatform.Controllers
             return View();
         }
 
-        //
         // GET: /Account/ResetPasswordConfirmation
         [AllowAnonymous]
         public ActionResult ResetPasswordConfirmation()
@@ -230,17 +206,14 @@ namespace MentoraPlatform.Controllers
             return View();
         }
 
-        //
         // POST: /Account/LogOff
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult LogOff()
         {
             AuthenticationManager.SignOut(DefaultAuthenticationTypes.ApplicationCookie);
-            // După ieșire, rămâne pe pagina de cursuri (vizibilă acum ca vizitator)
             return RedirectToAction("Index", "Courses");
         }
-
 
         protected override void Dispose(bool disposing)
         {
@@ -258,12 +231,10 @@ namespace MentoraPlatform.Controllers
                     _signInManager = null;
                 }
             }
-
             base.Dispose(disposing);
         }
 
         #region Helpers
-        // Used for XSRF protection when adding external logins
         private const string XsrfKey = "XsrfId";
 
         private IAuthenticationManager AuthenticationManager
@@ -288,7 +259,6 @@ namespace MentoraPlatform.Controllers
             {
                 return Redirect(returnUrl);
             }
-            // Destinația de siguranță este acum Courses
             return RedirectToAction("Index", "Courses");
         }
 

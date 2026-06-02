@@ -269,6 +269,14 @@
     <Compile Include="Migrations\202605081431267_AddCodeLabTable.Designer.cs">
       <DependentUpon>202605081431267_AddCodeLabTable.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202605291103569_AddCodeProjectTable.cs" />
+    <Compile Include="Migrations\202605291103569_AddCodeProjectTable.Designer.cs">
+      <DependentUpon>202605291103569_AddCodeProjectTable.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202606021447397_AddEnrollmentRequests.cs" />
+    <Compile Include="Migrations\202606021447397_AddEnrollmentRequests.Designer.cs">
+      <DependentUpon>202606021447397_AddEnrollmentRequests.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\AccountViewModels.cs" />
     <Compile Include="Models\CodeProject.cs" />
@@ -411,6 +419,12 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202605081431267_AddCodeLabTable.resx">
       <DependentUpon>202605081431267_AddCodeLabTable.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202605291103569_AddCodeProjectTable.resx">
+      <DependentUpon>202605291103569_AddCodeProjectTable.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202606021447397_AddEnrollmentRequests.resx">
+      <DependentUpon>202606021447397_AddEnrollmentRequests.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

@@ -1,11 +1,35 @@
 ﻿@{
-    ViewBag.Title = "Confirm Email";
+    ViewBag.Title = "Confirmare Email";
 }
-<main aria-labelledby="title">
-    <h2 id="title">@ViewBag.Title.</h2>
-    <div>
-        <p>
-            Thank you for confirming your email. Please @Html.ActionLink("Click here to Log in", "Login", "Account", routeValues: null, htmlAttributes: new { id = "loginLink" })
-        </p>
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5 text-center">
+            <div class="card border-0 shadow-lg p-5 rounded-4 bg-white">
+                <!-- Iconiță Succes mare, elegantă -->
+                <div class="d-inline-flex justify-content-center align-items-center bg-success bg-opacity-10 text-success rounded-circle p-4 mb-4" style="width: 100px; height: 100px;">
+                    <i class="fas fa-check-circle fa-4x animate-bounce"></i>
+                </div>
+
+                <h2 class="fw-bold text-dark mb-2">Email Confirmat!</h2>
+                <p class="text-secondary mb-4">Vă mulțumim pentru confirmarea adresei de email. Contul dumneavoastră Mentora este acum complet activ și securizat.</p>
+
+                <!-- Buton proeminent spre autentificare -->
+                <a href="@Url.Action("Login", "Account")" class="btn btn-primary btn-lg w-100 rounded-pill fw-bold py-2.5 shadow-sm transition-hover">
+                    <i class="fas fa-sign-in-alt me-2"></i> Intră în Cont
+                </a>
+            </div>
+        </div>
     </div>
-</main>
+</div>
+
+<style>
+    .transition-hover {
+        transition: all 0.3s ease;
+    }
+
+        .transition-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(13, 110, 253, 0.15) !important;
+        }
+</style>

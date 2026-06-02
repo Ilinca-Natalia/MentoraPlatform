@@ -3,7 +3,6 @@ using System.ComponentModel.DataAnnotations;
 
 namespace MentoraPlatform.Models
 {
-
     public class ForgotViewModel
     {
         [Required]
@@ -27,6 +26,7 @@ namespace MentoraPlatform.Models
         public bool RememberMe { get; set; }
     }
 
+    // MODIFICAT: Am eliminat complet proprietatea SelectedRole
     public class RegisterViewModel
     {
         [Required]
@@ -43,18 +43,14 @@ namespace MentoraPlatform.Models
         public string LastName { get; set; }
 
         [Required]
-        [Display(Name = "Vreau să fiu:")]
-        public string SelectedRole { get; set; } // Va fi "Professor" sau "Student"
-
-        [Required]
-        [StringLength(100, MinimumLength = 6)]
+        [StringLength(100, ErrorMessage = "Parola trebuie să aibă cel puțin {2} caractere.", MinimumLength = 6)]
         [DataType(DataType.Password)]
         [Display(Name = "Password")]
         public string Password { get; set; }
 
         [DataType(DataType.Password)]
         [Display(Name = "Confirm password")]
-        [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
+        [Compare("Password", ErrorMessage = "Parola și confirmarea parolei nu se potrivesc.")]
         public string ConfirmPassword { get; set; }
     }
 
@@ -86,6 +82,7 @@ namespace MentoraPlatform.Models
         [Display(Name = "Email")]
         public string Email { get; set; }
     }
+
     public class ExternalLoginListViewModel
     {
         public string ReturnUrl { get; set; }

@@ -1,63 +1,93 @@
-﻿@model IEnumerable<MentoraPlatform.Models.ApplicationUser>
+﻿@using Microsoft.AspNet.Identity
+@using Microsoft.AspNet.Identity.EntityFramework
+@model IEnumerable<MentoraPlatform.Models.ApplicationUser>
 
 @{
     ViewBag.Title = "Gestionare Utilizatori";
+    var context = new MentoraPlatform.Models.ApplicationDbContext();
+    var userStore = new UserStore<MentoraPlatform.Models.ApplicationUser>(context);
+    var userManager = new UserManager<MentoraPlatform.Models.ApplicationUser>(userStore);
 }
 
-<div class="container mt-4">
-    <div class="card shadow-sm border-0">
-        <div class="card-header bg-danger text-white py-3 d-flex justify-content-between align-items-center">
-            <h3 class="m-0"><i class="fa fa-users-cog me-2"></i>Control Utilizatori</h3>
-            <span class="badge bg-white text-danger">Total: @Model.Count()</span>
+<div class="container mt-4 text-start">
+    <div id="toastAlertContainer" style="position: fixed; top: 20px; right: 20px; z-index: 9999; max-width: 350px;"></div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show rounded-pill px-4 shadow-sm border-0 bg-success bg-opacity-10 text-success" role="alert">
+            <i class="fa fa-check-circle me-2"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
-        <div class="card-body">
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show rounded-pill px-4 shadow-sm border-0 bg-danger bg-opacity-10 text-danger" role="alert">
+            <i class="fa fa-exclamation-triangle me-2"></i> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+        <div class="card-header py-4 d-flex justify-content-between align-items-center border-0" style="background: linear-gradient(135deg, #1e293b, #3b82f6);">
+            <div>
+                <h3 class="m-0 fw-bold text-white"><i class="fa fa-users-cog me-2"></i>Control Utilizatori</h3>
+                <p class="text-white text-opacity-75 m-0 small mt-1">Gestionați rolurile și accesul membrilor în platformă.</p>
+            </div>
+            <span class="badge bg-white bg-opacity-15 text-dark fs-6 px-3 py-2 rounded-pill shadow-sm border border-black border-opacity-25">
+                Total: @Model.Count()
+            </span>
+        </div>
+        <div class="card-body p-0">
+            @Html.AntiForgeryToken()
             <div class="table-responsive">
-                <table class="table table-hover align-middle">
+                <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
-                        <tr>
-                            <th>Nume Complet</th>
-                            <th>Email</th>
-                            <th class="text-center">Rol Sistem</th>
-                            <th class="text-center">Acțiuni</th>
+                        <tr class="text-secondary" style="font-size: 13px; font-weight: 700; text-transform: uppercase;">
+                            <th class="ps-4 py-3">Utilizator</th>
+                            <th class="py-3">Email</th>
+                            <th class="text-center py-3" style="width: 25%;">Rol</th>
+                            <th class="text-center pe-4 py-3" style="width: 20%;">Acțiuni</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (var user in Model)
                         {
+                            var roles = userManager.GetRoles(user.Id);
+                            bool isCurrentAdmin = user.Email == User.Identity.Name;
+
                             <tr>
-                                <td>
-                                    <div class="fw-bold">@user.FirstName @user.LastName</div>
+                                <td class="ps-4 py-3">
+                                    <div class="fw-bold text-dark">@user.FirstName @user.LastName</div>
                                 </td>
-                                <td>@user.Email</td>
-                                <td class="text-center">
-                                    @* Identificăm rolul. În ASP.NET Identity, Roles este o colecție de RoleID *@
-                                    @if (User.IsInRole("Admin"))
+                                <td class="text-secondary py-3">@user.Email</td>
+                                <td class="text-center py-3">
+                                    @if (isCurrentAdmin)
                                     {
-                                        @* Verificăm rolul utilizatorului din rândul curent folosind UserManager sau logica de email pt. demo *@
-                                        if (user.Email.Contains("admin"))
-                                        {
-                                            <span class="badge bg-danger px-3 py-2 text-uppercase">Admin</span>
-                                        }
-                                        else if (user.Email.Contains("profesor") || user.Email.Contains("teacher"))
-                                        {
-                                            <span class="badge bg-warning text-dark px-3 py-2 text-uppercase">Profesor</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge bg-primary px-3 py-2 text-uppercase">Student</span>
-                                        }
+                                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-4 py-2 text-uppercase rounded-pill fw-bold small">
+                                            <i class="fas fa-shield-alt me-1"></i> Admin (Sesiune activă)
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <select class="form-select form-select-sm rounded-pill px-3 py-1.5 border-secondary border-opacity-25 text-dark fw-bold text-center js-role-select shadow-sm"
+                                                style="width: 150px; display: inline-block; cursor: pointer; background-color: #f8fafc;"
+                                                data-user-id="@user.Id">
+                                            <option value="Admin" @(roles.Contains("Admin") ? "selected" : "")>Admin</option>
+                                            <option value="Professor" @(roles.Contains("Professor") || roles.Contains("Teacher") ? "selected" : "")>Profesor</option>
+                                            <option value="Student" @(roles.Contains("Student") || (!roles.Contains("Admin") && !roles.Contains("Professor")) ? "selected" : "")>Student</option>
+                                        </select>
                                     }
                                 </td>
-                                <td class="text-center">
-                                    @if (user.Email != User.Identity.Name)
+                                <td class="text-center pe-4 py-3">
+                                    @if (!isCurrentAdmin)
                                     {
-                                        <a href="@Url.Action("Delete", new { id = user.Id })" class="btn btn-outline-danger btn-sm rounded-pill px-3">
+                                        <a href="@Url.Action("Delete", "Users", new { id = user.Id })" class="btn btn-outline-danger btn-sm rounded-pill px-3 fw-bold">
                                             <i class="fa fa-user-times me-1"></i> Elimină
                                         </a>
                                     }
                                     else
                                     {
-                                        <span class="badge bg-light text-muted border px-3 py-2">Contul Tău</span>
+                                        <span class="text-muted small italic">Sesiune curentă</span>
                                     }
                                 </td>
                             </tr>
@@ -68,3 +98,41 @@
         </div>
     </div>
 </div>
+
+@section scripts {
+    <script>
+        $(document).ready(function () {
+            $('.js-role-select').on('change', function () {
+                var userId = $(this).attr('data-user-id');
+                var newRole = $(this).val();
+                var selectDropdown = $(this);
+                selectDropdown.prop('disabled', true);
+                var antiforgeryToken = $('input[name="__RequestVerificationToken"]').val();
+
+                $.ajax({
+                    url: '@Url.Action("ChangeRole", "Users")',
+                    type: 'POST',
+                    data: { __RequestVerificationToken: antiforgeryToken, userId: userId, newRole: newRole },
+                    success: function (response) {
+                        selectDropdown.prop('disabled', false);
+                        if (response.success) { showToastNotification(response.message, 'success'); }
+                        else { showToastNotification(response.message, 'danger'); setTimeout(function() { location.reload(); }, 1800); }
+                    },
+                    error: function () {
+                        selectDropdown.prop('disabled', false);
+                        showToastNotification("Eroare la comunicarea cu serverul.", 'danger');
+                    }
+                });
+            });
+
+            function showToastNotification(message, type) {
+                var icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle';
+                var alertClass = type === 'success' ? 'bg-success text-success bg-opacity-10 border-success' : 'bg-danger text-danger bg-opacity-10 border-danger';
+                var toastHtml = `<div class="alert ${alertClass} alert-dismissible fade show shadow border rounded-4 p-3 mb-2" role="alert"><i class="fa ${icon} me-2"></i><span class="fw-bold small">${message}</span><button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`;
+                var toastElement = $(toastHtml);
+                $('#toastAlertContainer').append(toastElement);
+                setTimeout(function () { toastElement.fadeOut('slow', function () { $(this).remove(); }); }, 4000);
+            }
+        });
+    </script>
+}

@@ -30,6 +30,7 @@ namespace MentoraPlatform.Models
         public DbSet<Lesson> Lessons { get; set; }
         public DbSet<LessonAttachment> LessonAttachments { get; set; }
         public DbSet<UserLessonProgress> UserLessonProgresses { get; set; }
+        public DbSet<EnrollmentRequest> EnrollmentRequests { get; set; }
 
         // --- TABELE QUIZ (AI) ---
         public DbSet<Quiz> Quizzes { get; set; }

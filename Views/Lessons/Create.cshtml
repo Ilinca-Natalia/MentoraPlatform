@@ -43,7 +43,7 @@
                         <div class="mb-5">
                             <label class="form-label fw-bold text-secondary uppercase small">Materiale Descărcabile (.pdf, .zip, .docx)</label>
                             <input type="file" name="attachments" multiple class="form-control border-dashed p-4" />
-                            <small class="text-muted">Poți selecta mai multe fișiere simultan.</small>
+                            <small class="text-muted">Poți selecta mai multe fișiere simultan din calculator.</small>
                         </div>
 
                         <div class="d-flex gap-3 pt-3 border-top">
@@ -69,3 +69,11 @@
         box-shadow: 0 0 0 0.25rem rgba(13,110,253,.1);
     }
 </style>
+
+@section Scripts {
+    <!-- Includerea CKEditor pe ecranul de Creare lecție -->
+    <script src="https://cdn.ckeditor.com/4.22.1/standard/ckeditor.js"></script>
+    <script>
+        CKEDITOR.replace('editor');
+    </script>
+}

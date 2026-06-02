@@ -1,18 +1,21 @@
-﻿@{
+﻿@model MentoraPlatform.Models.CodeProject
+@{
     ViewBag.Title = "Web Editor Pro";
 }
 
-<!-- CodeMirror Core & Theme -->
+<!-- Stiluri adiționale CodeMirror și Lintere -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/codemirror.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/theme/dracula.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/addon/lint/lint.min.css">
 
-<!-- Librării Compilare/Validare (Lintere) -->
+<!-- Încărcare biblioteci analiză statică (Lintere) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jshint/2.13.6/jshint.min.js"></script>
+<!-- Rezolvare JSHint: Conectăm variabila globală JSHINT la window.JSHint cerută de CodeMirror, salvând funcționarea butoanelor -->
+<script>window.JSHint = JSHINT;</script>
 <script src="https://unpkg.com/htmlhint/lib/htmlhint.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/csslint/1.0.5/csslint.js"></script>
 
-<!-- CodeMirror Scripts -->
+<!-- Scripturi principale CodeMirror și module de sintaxă -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/codemirror.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/mode/xml/xml.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/mode/css/css.min.js"></script>
@@ -42,45 +45,50 @@
 
     .error-line {
         color: #ff4444;
-        border-bottom: 1px dashed #ff4444;
         font-weight: bold;
     }
 
-    .log-line {
+    .success-line {
         color: #00ff00;
     }
 </style>
 
-<div class="container-fluid py-3">
+<div class="container-fluid py-3 text-white">
+    <!-- Păstrăm ID-ul proiectului pentru operațiile automate din baza de date -->
+    <input type="hidden" id="projectId" value="@Model.Id" />
+
+    <!-- Bară Navigare Editor -->
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="fw-bold m-0 text-white"><i class="fa fa-code text-primary me-2"></i>Mentora Pro Compiler</h4>
+        <div class="d-flex align-items-center gap-3">
+            <h4 class="fw-bold m-0 text-white"><i class="fa fa-code text-primary me-2"></i>Mentora Pro Compiler</h4>
+            <!-- Câmp text pentru denumirea proiectului curent -->
+            <input type="text" id="projectTitle" class="form-control form-control-sm text-white bg-dark border-secondary rounded-pill px-3" style="width: 220px;" value="@Model.Title" placeholder="Titlu Proiect" />
+        </div>
         <div class="btn-group">
             <button onclick="runWebCode()" class="btn btn-primary px-4 rounded-pill me-2 shadow"><i class="fa fa-terminal me-2"></i>Build & Run</button>
+            <button onclick="saveProjectToDb()" class="btn btn-success px-4 rounded-pill me-2 shadow"><i class="fa fa-save me-2"></i>Save Cloud</button>
             <button onclick="exportWebCode()" class="btn btn-outline-info px-4 rounded-pill me-2"><i class="fa fa-download me-2"></i>Export Bundle</button>
             <button onclick="clearConsole()" class="btn btn-outline-danger px-3 rounded-pill"><i class="fa fa-eraser"></i></button>
         </div>
     </div>
 
     <div class="row" style="height: 82vh;">
-        <!-- Panou Input (Editori) -->
-        <div class="col-md-5 h-100 d-flex flex-column bg-dark p-3 rounded-3 shadow-lg">
-            <label class="small fw-bold text-info"><i class="fab fa-html5 me-1"></i> STRUCTURE (HTML5)</label>
-            <textarea id="htmlCode"><h1>Salut Mentora!</h1>
-<div class="test">Compilatorul este activ.</div></textarea>
+        <!-- Partea Stângă: Editorii de cod + Terminalul Build -->
+        <div class="col-md-5 h-100 d-flex flex-column bg-dark p-3 rounded-3 shadow-lg overflow-auto">
+            <label class="small fw-bold text-info mb-1"><i class="fab fa-html5 me-1"></i> STRUCTURE (HTML5)</label>
+            <textarea id="htmlCode">@(string.IsNullOrEmpty(Model.HtmlCode) ? "<h1>Salut Mentora!</h1>\n<div class=\"test\">Compilatorul este activ.</div>" : Model.HtmlCode)</textarea>
 
-            <label class="small fw-bold text-warning"><i class="fab fa-css3-alt me-1"></i> STYLES (CSS3)</label>
-            <textarea id="cssCode">body { background: #121212; color: white; transition: 0.3s; }
-h1 { color: #0d6efd; text-align: center; font-family: sans-serif; }</textarea>
+            <label class="small fw-bold text-warning mb-1"><i class="fab fa-css3-alt me-1"></i> STYLES (CSS3)</label>
+            <textarea id="cssCode">@(string.IsNullOrEmpty(Model.CssCode) ? "body { background: #121212; color: white; transition: 0.3s; }\nh1 { color: #0d6efd; text-align: center; font-family: sans-serif; }" : Model.CssCode)</textarea>
 
-            <label class="small fw-bold text-warning-50"><i class="fab fa-js me-1"></i> LOGIC (ES6+)</label>
-            <textarea id="jsCode">console.log('Build successful!');
-// Încearcă să scrii greșit aici pentru a vedea compilatorul în acțiune</textarea>
+            <label class="small fw-bold text-warning mb-1"><i class="fab fa-js me-1"></i> LOGIC (ES6+)</label>
+            <textarea id="jsCode">@(string.IsNullOrEmpty(Model.JsCode) ? "console.log('Build successful!');" : Model.JsCode)</textarea>
 
-            <label class="small fw-bold text-danger mt-3"><i class="fa fa-bug me-1"></i> BUILD OUTPUT</label>
-            <div id="consoleLog" class="overflow-auto"></div>
+            <label class="small fw-bold text-danger mt-2 mb-1"><i class="fa fa-bug me-1"></i> BUILD OUTPUT</label>
+            <div id="consoleLog" class="overflow-auto">> Editor inițializat local.</div>
         </div>
 
-        <!-- Panou Output (Live Preview) -->
+        <!-- Partea Dreaptă: Previzualizarea Live prin iframe securizat -->
         <div class="col-md-7 h-100">
             <div class="card h-100 shadow-sm border-0 overflow-hidden bg-white">
                 <div class="card-header bg-light py-1 small fw-bold text-muted"><i class="fa fa-eye me-1"></i> LIVE RENDER</div>
@@ -91,8 +99,9 @@ h1 { color: #0d6efd; text-align: center; font-family: sans-serif; }</textarea>
 </div>
 
 <script type="text/javascript">
-    // Inițializare Editori
     const config = { theme: "dracula", lineNumbers: true, tabSize: 2 };
+
+    // Inițializare CodeMirror instanțe editori
     var htmlEditor = CodeMirror.fromTextArea(document.getElementById("htmlCode"), { ...config, mode: "xml" });
     var cssEditor = CodeMirror.fromTextArea(document.getElementById("cssCode"), { ...config, mode: "css" });
     var jsEditor = CodeMirror.fromTextArea(document.getElementById("jsCode"), {
@@ -102,6 +111,7 @@ h1 { color: #0d6efd; text-align: center; font-family: sans-serif; }</textarea>
         lint: true
     });
 
+    // Îmbinare cod local și compilare directă în iframe-ul sandbox
     function runWebCode() {
         const html = htmlEditor.getValue();
         const css = cssEditor.getValue();
@@ -111,25 +121,29 @@ h1 { color: #0d6efd; text-align: center; font-family: sans-serif; }</textarea>
         consoleLog.innerHTML = "<div>[Build started at " + new Date().toLocaleTimeString() + "]</div>";
         let hasErrors = false;
 
-        // 1. COMPILARE/VALIDARE HTML
-        const htmlValidation = HTMLHint.verify(html, { "tag-pair": true, "attr-no-duplication": true, "tagname-lowercase": true });
-        if (htmlValidation.length > 0) {
-            htmlValidation.forEach(err => {
-                logToConsole(`HTML ERROR (Line ${err.line}): ${err.message}`, "error");
-                hasErrors = true;
+        // 1. Validare structurală HTML (HTMLHint)
+        if (window.HTMLHint) {
+            const htmlValidation = HTMLHint.verify(html, { "tag-pair": true, "attr-no-duplication": true, "tagname-lowercase": true });
+            if (htmlValidation.length > 0) {
+                htmlValidation.forEach(err => {
+                    logToConsole(`HTML ERROR (Line ${err.line}): ${err.message}`, "error");
+                    hasErrors = true;
+                });
+            }
+        }
+
+        // 2. Validare standardizare CSS (CSSLint)
+        if (window.CSSLint) {
+            const cssValidation = CSSLint.verify(css);
+            cssValidation.messages.forEach(msg => {
+                if (msg.type === 'error') {
+                    logToConsole(`CSS ERROR (Line ${msg.line}): ${msg.message}`, "error");
+                    hasErrors = true;
+                }
             });
         }
 
-        // 2. COMPILARE/VALIDARE CSS
-        const cssValidation = CSSLint.verify(css);
-        cssValidation.messages.forEach(msg => {
-            if (msg.type === 'error') {
-                logToConsole(`CSS ERROR (Line ${msg.line}): ${msg.message}`, "error");
-                hasErrors = true;
-            }
-        });
-
-        // 3. COMPILARE JS
+        // 3. Validare sintaxă primară JavaScript
         try {
             new Function(js);
         } catch (e) {
@@ -138,13 +152,13 @@ h1 { color: #0d6efd; text-align: center; font-family: sans-serif; }</textarea>
         }
 
         if (hasErrors) {
-            logToConsole("BUILD FAILED: Please fix the errors above.", "error");
+            logToConsole("BUILD FAILED: Rezolvați erorile marcate mai sus înainte de execuție.", "error");
             return;
         }
 
-        logToConsole("BUILD SUCCESSFUL. Rendering...", "success");
+        logToConsole("BUILD SUCCESSFUL. Randare virtuală...", "success");
 
-        // Injectare
+        // Compilare și injectare cod în Iframe
         const preview = document.getElementById('preview').contentWindow.document;
         const errorTrap = `<script>
             window.onerror = function(m, u, l) { window.parent.postMessage({t:'error', m:m, l:l}, '*'); };
@@ -156,26 +170,64 @@ h1 { color: #0d6efd; text-align: center; font-family: sans-serif; }</textarea>
         preview.close();
     }
 
+    // Trimitere asincronă a codului scris către serverul ASP.NET în SQL Server
+    async function saveProjectToDb() {
+        const title = document.getElementById('projectTitle').value;
+        const html = htmlEditor.getValue();
+        const css = cssEditor.getValue();
+        const js = jsEditor.getValue();
+        const projectId = document.getElementById('projectId').value;
+
+        logToConsole("Pachetul de date se trimite spre baza de date...", "info");
+
+        try {
+            const response = await fetch('@Url.Action("SaveProject", "CodeLab")', {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: new URLSearchParams({
+                    title: title,
+                    htmlCode: html,
+                    cssCode: css,
+                    jsCode: js,
+                    projectId: projectId
+                })
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                logToConsole(result.message, "success");
+                // Salvăm Id-ul din DB pe client pentru viitoarele actualizări de tip UPDATE
+                document.getElementById('projectId').value = result.id;
+            } else {
+                logToConsole("Eroare la salvare: " + result.message, "error");
+            }
+        } catch (err) {
+            logToConsole("Eroare de comunicare locală: " + err.message, "error");
+        }
+    }
+
     function logToConsole(message, type = "info") {
         const consoleLog = document.getElementById('consoleLog');
         const div = document.createElement('div');
         if (type === "error") div.className = "error-line";
-        if (type === "success") div.style.color = "#00ff00";
+        if (type === "success") div.className = "success-line";
         div.innerHTML = `> ${message}`;
         consoleLog.appendChild(div);
         consoleLog.scrollTop = consoleLog.scrollHeight;
     }
 
-    function clearConsole() { document.getElementById('consoleLog').innerHTML = "> Console cleared."; }
+    function clearConsole() { document.getElementById('consoleLog').innerHTML = "> Consolă curățată."; }
 
+    // Exportarea bundle-ului ca fișier unic HTML descărcabil offline
     function exportWebCode() {
         const bundle = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${cssEditor.getValue()}</style></head><body>${htmlEditor.getValue()}<script>${jsEditor.getValue()}<\/script></body></html>`;
         const a = document.createElement('a');
         a.href = URL.createObjectURL(new Blob([bundle], { type: 'text/html' }));
-        a.download = 'mentora_bundle_' + Date.now() + '.html';
+        a.download = 'mentora_proiect_' + Date.now() + '.html';
         a.click();
     }
 
+    // Mesaje din consolă provenite din iframe (console.log sau erori run-time)
     window.addEventListener('message', (e) => {
         if (e.data.t === 'error') logToConsole(`RUNTIME ERROR: ${e.data.m}`, "error");
         if (e.data.t === 'log') logToConsole(`CONSOLE: ${e.data.m}`, "info");

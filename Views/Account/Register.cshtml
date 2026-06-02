@@ -1,79 +1,81 @@
 ﻿@model MentoraPlatform.Models.RegisterViewModel
 @{
-    ViewBag.Title = "Register";
+    ViewBag.Title = "Înregistrare Cont Nou";
 }
 
-<main aria-labelledby="title">
-    <h2 id="title">@ViewBag.Title.</h2>
+<div class="container py-5 text-start">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-lg p-4 p-md-5 rounded-4 bg-white">
 
-    @using (Html.BeginForm("Register", "Account", FormMethod.Post, new { role = "form" }))
-    {
-        @Html.AntiForgeryToken()
-        <h4>Create a new account.</h4>
-        <hr />
-        @Html.ValidationSummary("", new { @class = "text-danger" })
+                <!-- Antet Card -->
+                <div class="text-center mb-4">
+                    <h2 class="fw-bold text-dark mb-1">Creează Cont Mentora</h2>
+                </div>
 
-        @* Câmpul pentru Email *@
-        <div class="row mb-3">
-            @Html.LabelFor(m => m.Email, new { @class = "col-md-2 col-form-label" })
-            <div class="col-md-10">
-                @Html.TextBoxFor(m => m.Email, new { @class = "form-control" })
-            </div>
-        </div>
-
-        @* Câmpul pentru Prenume *@
-        <div class="row mb-3">
-            @Html.LabelFor(m => m.FirstName, new { @class = "col-md-2 col-form-label" })
-            <div class="col-md-10">
-                @Html.TextBoxFor(m => m.FirstName, new { @class = "form-control" })
-            </div>
-        </div>
-
-        @* Câmpul pentru Nume *@
-        <div class="row mb-3">
-            @Html.LabelFor(m => m.LastName, new { @class = "col-md-2 col-form-label" })
-            <div class="col-md-10">
-                @Html.TextBoxFor(m => m.LastName, new { @class = "form-control" })
-            </div>
-        </div>
-
-        @* Selectorul de Rol (Profesor / Elev) *@
-        <div class="row mb-3">
-            @Html.LabelFor(m => m.SelectedRole, new { @class = "col-md-2 col-form-label" })
-            <div class="col-md-10">
-                @Html.DropDownListFor(m => m.SelectedRole, new List<SelectListItem>
+                @using (Html.BeginForm("Register", "Account", FormMethod.Post, new { role = "form" }))
                 {
-                    new SelectListItem { Text = "Elev / Student", Value = "Student" },
-                    new SelectListItem { Text = "Profesor", Value = "Professor" }
-                }, "-- Selectează Rolul --", new { @class = "form-control" })
-            </div>
-        </div>
+                    @Html.AntiForgeryToken()
+                    @Html.ValidationSummary("", new { @class = "alert alert-danger rounded-3 py-2 small" })
 
-        @* Câmpul pentru Parolă *@
-        <div class="row mb-3">
-            @Html.LabelFor(m => m.Password, new { @class = "col-md-2 col-form-label" })
-            <div class="col-md-10">
-                @Html.PasswordFor(m => m.Password, new { @class = "form-control" })
-            </div>
-        </div>
+                    <!-- Grid pentru Nume și Prenume -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-secondary small uppercase"><i class="fas fa-user me-1"></i> Prenume</label>
+                            @Html.TextBoxFor(m => m.FirstName, new { @class = "form-control border-2 rounded-3", placeholder = "Andrei" })
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-secondary small uppercase"><i class="fas fa-user me-1"></i> Nume Familie</label>
+                            @Html.TextBoxFor(m => m.LastName, new { @class = "form-control border-2 rounded-3", placeholder = "Popescu" })
+                        </div>
+                    </div>
 
-        @* Confirmare Parolă *@
-        <div class="row mb-3">
-            @Html.LabelFor(m => m.ConfirmPassword, new { @class = "col-md-2 col-form-label" })
-            <div class="col-md-10">
-                @Html.PasswordFor(m => m.ConfirmPassword, new { @class = "form-control" })
-            </div>
-        </div>
+                    <!-- Câmp Email -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-secondary small uppercase"><i class="fas fa-envelope me-1"></i> Adresă Email</label>
+                        @Html.TextBoxFor(m => m.Email, new { @class = "form-control border-2 rounded-3", placeholder = "nume@exemplu.com" })
+                    </div>
 
-        @* Butonul de Submit *@
-        <div class="row">
-            <div class="offset-md-2 col-md-10">
-                <input type="submit" value="Register" class="btn btn-outline-dark" />
+                    <!-- Câmp Parolă -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-secondary small uppercase"><i class="fas fa-lock me-1"></i> Parolă</label>
+                        @Html.PasswordFor(m => m.Password, new { @class = "form-control border-2 rounded-3", placeholder = "Minim 6 caractere" })
+                    </div>
+
+                    <!-- Confirmare Parolă -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-secondary small uppercase"><i class="fas fa-lock me-1"></i> Confirmare Parolă</label>
+                        @Html.PasswordFor(m => m.ConfirmPassword, new { @class = "form-control border-2 rounded-3", placeholder = "Reintroduceți parola" })
+                    </div>
+
+                    <!-- Buton Submit -->
+                    <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill fw-bold py-2.5 shadow-sm transition-hover mb-4">
+                        <i class="fas fa-user-plus me-2"></i> Creează Cont Student
+                    </button>
+
+                    <!-- Link conectare dacă are cont -->
+                    <div class="text-center pt-2 border-top">
+                        <span class="text-muted small">Aveți deja un cont activ?</span>
+                        <a href="@Url.Action("Login", "Account")" class="text-decoration-none small fw-bold text-primary ms-1">Autentificați-vă aici</a>
+                    </div>
+                }
             </div>
         </div>
+    </div>
+</div>
+
+<style>
+    .transition-hover {
+        transition: all 0.3s ease;
     }
-</main>
 
-@section Scripts {
-    @Scripts.Render("~/bundles/jqueryval")
-}
+        .transition-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(13, 110, 253, 0.15) !important;
+        }
+
+    .form-control:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.1);
+    }
+</style>

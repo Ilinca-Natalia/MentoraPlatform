@@ -17,7 +17,6 @@ namespace MentoraPlatform.Controllers
         [AllowAnonymous] // Permitem vizitatorilor să vadă lista de cursuri (promovare)
         public ActionResult Index()
         {
-            // Includem Teacher pentru a afișa numele profesorului în listă
             var courses = db.Courses.Include(c => c.Teacher).ToList();
             return View(courses);
         }
@@ -37,7 +36,6 @@ namespace MentoraPlatform.Controllers
         {
             if (ModelState.IsValid)
             {
-                // ATRIBUIM AUTOMAT PROFESORUL CURENT
                 course.TeacherId = User.Identity.GetUserId();
                 course.CreatedAt = DateTime.Now;
 
@@ -56,7 +54,6 @@ namespace MentoraPlatform.Controllers
             Course course = db.Courses.Find(id);
             if (course == null) return HttpNotFound();
 
-            // VERIFICARE SECURITATE: Ești proprietarul sau Admin?
             if (course.TeacherId != User.Identity.GetUserId() && !User.IsInRole("Admin"))
             {
                 return new HttpStatusCodeResult(HttpStatusCode.Forbidden, "Nu poți edita cursul altui profesor!");
@@ -71,7 +68,6 @@ namespace MentoraPlatform.Controllers
         [Authorize(Roles = "Professor, Admin")]
         public ActionResult Edit([Bind(Include = "Id,Title,Description,TeacherId,CreatedAt")] Course course)
         {
-            // Re-verificăm securitatea și la POST (pentru a evita hack-urile manuale de ID)
             if (course.TeacherId != User.Identity.GetUserId() && !User.IsInRole("Admin"))
             {
                 return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
@@ -94,7 +90,6 @@ namespace MentoraPlatform.Controllers
             Course course = db.Courses.Find(id);
             if (course == null) return HttpNotFound();
 
-            // SECURITATE
             if (course.TeacherId != User.Identity.GetUserId() && !User.IsInRole("Admin"))
             {
                 return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
@@ -111,7 +106,6 @@ namespace MentoraPlatform.Controllers
         {
             Course course = db.Courses.Find(id);
 
-            // SECURITATE FINALĂ
             if (course.TeacherId != User.Identity.GetUserId() && !User.IsInRole("Admin"))
             {
                 return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
@@ -122,6 +116,7 @@ namespace MentoraPlatform.Controllers
             return RedirectToAction("Index");
         }
 
+        // MODIFICAT: Trimite cererea de înscriere la curs
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Student")]
@@ -133,55 +128,103 @@ namespace MentoraPlatform.Controllers
 
             if (course != null && student != null)
             {
-                if (!course.EnrolledStudents.Contains(student))
+                // Căutăm dacă există deja o cerere pentru acest elev la acest curs
+                var existingRequest = db.EnrollmentRequests
+                    .FirstOrDefault(r => r.CourseId == id && r.StudentId == userId);
+
+                if (existingRequest == null)
                 {
-                    course.EnrolledStudents.Add(student);
+                    // Creăm o cerere nouă în așteptare
+                    var request = new EnrollmentRequest
+                    {
+                        CourseId = id,
+                        StudentId = userId,
+                        RequestDate = DateTime.Now,
+                        IsPending = true,
+                        IsApproved = false
+                    };
+                    db.EnrollmentRequests.Add(request);
                     db.SaveChanges();
+                    TempData["SuccessMessage"] = "Solicitarea dumneavoastră de înscriere a fost expediată! Profesorul titular va analiza cererea în cel mai scurt timp.";
+                }
+                else if (existingRequest.IsPending)
+                {
+                    TempData["ErrorMessage"] = "Aveți deja o cerere activă în așteptare pentru acest curs.";
+                }
+                else if (!existingRequest.IsApproved)
+                {
+                    // Permitem retrimiterea cererii dacă a fost respinsă anterior
+                    existingRequest.IsPending = true;
+                    existingRequest.IsApproved = false;
+                    existingRequest.RequestDate = DateTime.Now;
+                    db.Entry(existingRequest).State = EntityState.Modified;
+                    db.SaveChanges();
+                    TempData["SuccessMessage"] = "Solicitarea dumneavoastră a fost retrimisă cu succes spre analiză!";
                 }
             }
 
             return RedirectToAction("Details", new { id = id });
         }
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing) db.Dispose();
-            base.Dispose(disposing);
-        }
-       
+
+        // NOU: Aprobare cerere de înscriere de către Profesor
         [HttpPost]
-        [Authorize(Roles = "Professor, Admin")]
         [ValidateAntiForgeryToken]
-        public ActionResult AddStudent(int courseId, string studentEmail)
+        [Authorize(Roles = "Professor, Admin")]
+        public ActionResult ApproveRequest(int requestId)
         {
-            if (string.IsNullOrEmpty(studentEmail))
+            var request = db.EnrollmentRequests.Include(r => r.Course).Include(r => r.Student).FirstOrDefault(r => r.Id == requestId);
+            if (request != null)
             {
-                TempData["ErrorMessage"] = "Vă rugăm să introduceți un email.";
-                return RedirectToAction("Details", new { id = courseId });
-            }
-
-            var student = db.Users.FirstOrDefault(u => u.Email == studentEmail);
-
-            if (student != null)
-            {
-                var course = db.Courses.Include(c => c.EnrolledStudents).FirstOrDefault(c => c.Id == courseId);
-                if (!course.EnrolledStudents.Any(s => s.Id == student.Id))
+                var currentUserId = User.Identity.GetUserId();
+                if (request.Course.TeacherId != currentUserId && !User.IsInRole("Admin"))
                 {
-                    course.EnrolledStudents.Add(student);
-                    db.SaveChanges();
-                    TempData["SuccessMessage"] = $"Elevul {student.FirstName} a fost înscris!";
+                    return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
                 }
-                else
-                {
-                    TempData["ErrorMessage"] = "Elevul este deja înscris la acest curs.";
-                }
-            }
-            else
-            {
-                TempData["ErrorMessage"] = "Nu am găsit niciun cont cu acest email.";
-            }
 
-            return RedirectToAction("Details", new { id = courseId });
+                // Schimbăm starea cererii
+                request.IsPending = false;
+                request.IsApproved = true;
+
+                // Adăugăm elevul în mod oficial la curs
+                var course = db.Courses.Include(c => c.EnrolledStudents).FirstOrDefault(c => c.Id == request.CourseId);
+                var student = db.Users.Find(request.StudentId);
+                if (course != null && student != null)
+                {
+                    if (!course.EnrolledStudents.Any(s => s.Id == student.Id))
+                    {
+                        course.EnrolledStudents.Add(student);
+                    }
+                }
+
+                db.SaveChanges();
+                TempData["SuccessMessage"] = $"Cererea de înscriere pentru {student.FirstName} {student.LastName} a fost aprobată cu succes!";
+            }
+            return RedirectToAction("Index", "Manage");
         }
+
+        // NOU: Respingere cerere de înscriere
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Professor, Admin")]
+        public ActionResult RejectRequest(int requestId)
+        {
+            var request = db.EnrollmentRequests.Include(r => r.Course).Include(r => r.Student).FirstOrDefault(r => r.Id == requestId);
+            if (request != null)
+            {
+                var currentUserId = User.Identity.GetUserId();
+                if (request.Course.TeacherId != currentUserId && !User.IsInRole("Admin"))
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
+                }
+
+                request.IsPending = false;
+                request.IsApproved = false;
+                db.SaveChanges();
+                TempData["SuccessMessage"] = "Cererea de înscriere a fost respinsă.";
+            }
+            return RedirectToAction("Index", "Manage");
+        }
+
         // GET: Courses/Details/5
         public ActionResult Details(int? id)
         {
@@ -195,17 +238,19 @@ namespace MentoraPlatform.Controllers
 
             if (course == null) return HttpNotFound();
 
-            // ID-urile elevilor deja înscriși
-            var enrolledIds = course.EnrolledStudents.Select(s => s.Id).ToList();
+            var currentUserId = User.Identity.GetUserId();
 
-            // Găsim ID-ul rolului de "Student"
+            // Verificăm dacă există vreo cerere de înscriere trimisă de studentul curent
+            ViewBag.EnrollmentRequest = db.EnrollmentRequests
+                                          .FirstOrDefault(r => r.CourseId == id && r.StudentId == currentUserId);
+
+            var enrolledIds = course.EnrolledStudents.Select(s => s.Id).ToList();
             var studentRoleId = db.Roles.FirstOrDefault(r => r.Name == "Student")?.Id;
 
-            // Filtrare: Să aibă rolul Student, să nu fie profesorul cursului și să nu fie deja înscris
             ViewBag.RawStudentList = db.Users
-                .Where(u => u.Roles.Any(r => r.RoleId == studentRoleId)) // Doar Studenți
-                .Where(u => u.Id != course.TeacherId)                   // Fără profesorul cursului
-                .Where(u => !enrolledIds.Contains(u.Id))                // Fără cei deja înscriși
+                .Where(u => u.Roles.Any(r => r.RoleId == studentRoleId))
+                .Where(u => u.Id != course.TeacherId)
+                .Where(u => !enrolledIds.Contains(u.Id))
                 .ToList();
 
             return View(course);
@@ -221,10 +266,24 @@ namespace MentoraPlatform.Controllers
             if (course != null && student != null)
             {
                 course.EnrolledStudents.Remove(student);
+
+                // Opțional: Ștergem și istoricul aprobărilor în caz de excludere manuală
+                var req = db.EnrollmentRequests.FirstOrDefault(r => r.CourseId == courseId && r.StudentId == studentId);
+                if (req != null)
+                {
+                    db.EnrollmentRequests.Remove(req);
+                }
+
                 db.SaveChanges();
-                TempData["SuccessMessage"] = "Elev eliminat.";
+                TempData["SuccessMessage"] = "Elev eliminat cu succes din cadrul disciplinei.";
             }
             return RedirectToAction("Details", new { id = courseId });
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing) db.Dispose();
+            base.Dispose(disposing);
         }
     }
 }

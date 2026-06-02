@@ -11,15 +11,18 @@
     bool isAdmin = User.IsInRole("Admin");
     bool isTeacherOwner = Request.IsAuthenticated && (currentUserId == Model.TeacherId);
     bool isOwner = isTeacherOwner || isAdmin;
+
     // Un elev are acces dacă este înscris. Profesorul/Adminul are acces mereu.
     bool isEnrolled = Model.EnrolledStudents != null && Model.EnrolledStudents.Any(s => s.Id == currentUserId);
     bool hasAccess = isEnrolled || isOwner;
 
     var completedIds = ViewBag.CompletedLessonIds as List<int> ?? new List<int>();
+
+    // Obținem cererea activă de înscriere transmisă de utilizator
+    var enrollmentRequest = ViewBag.EnrollmentRequest as MentoraPlatform.Models.EnrollmentRequest;
 }
 
 <style>
-    /* Stil pentru Select2 Searchable Dropdown */
     .select2-container--default .select2-selection--single {
         border-radius: 8px !important;
         height: 38px !important;
@@ -40,15 +43,69 @@
         border-radius: 8px !important;
         box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
+
+    .custom-dropdown-container {
+        position: relative;
+        display: inline-block;
+    }
+
+    .custom-dropdown-menu {
+        display: none;
+        position: absolute;
+        right: 0;
+        top: 100%;
+        background-color: #ffffff;
+        min-width: 160px;
+        box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.15);
+        border-radius: 8px;
+        padding: 6px 0;
+        z-index: 1050;
+        border: 1px solid #e2e8f0;
+        list-style: none;
+        margin: 4px 0 0 0;
+    }
+
+        .custom-dropdown-menu.show-menu {
+            display: block !important;
+        }
+
+    .custom-dropdown-item {
+        color: #2d3748;
+        padding: 8px 16px;
+        text-decoration: none;
+        display: block;
+        font-size: 14px;
+        transition: background-color 0.2s;
+        text-align: left;
+    }
+
+        .custom-dropdown-item:hover {
+            background-color: #f7fafc;
+            color: #1a202c;
+        }
+
+    .custom-dropdown-divider {
+        height: 1px;
+        margin: 4px 0;
+        overflow: hidden;
+        background-color: #e2e8f0;
+    }
 </style>
 
 <div class="container mt-4 pb-5">
     @* --- MESAJE NOTIFICARE --- *@
     @if (TempData["SuccessMessage"] != null)
     {
-        <div class="alert alert-success alert-dismissible fade show rounded-pill px-4 shadow-sm" role="alert">
+        <div class="alert alert-success alert-dismissible fade show rounded-pill px-4 shadow-sm text-start" role="alert">
             <i class="fa fa-check-circle me-2"></i> @TempData["SuccessMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" data-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show rounded-pill px-4 shadow-sm text-start" role="alert">
+            <i class="fa fa-exclamation-triangle me-2"></i> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" data-dismiss="alert" aria-label="Close"></button>
         </div>
     }
 
@@ -68,6 +125,56 @@
                 </div>
             </div>
 
+            @* --- CARD INTERACTIV DE ÎNSCRIERE / STATUS SOLICITARE --- *@
+            @if (!hasAccess && User.IsInRole("Student"))
+            {
+                <div class="card border-warning bg-warning bg-opacity-10 text-start p-4 rounded-3 mb-4 shadow-sm border-2">
+                    <div class="d-flex align-items-center">
+                        @if (enrollmentRequest == null)
+                        {
+                            <!-- Studentul nu a trimis nicio solicitare în baza de date -->
+                            <i class="fa fa-lock text-warning fa-3x me-3"></i>
+                            <div>
+                                <h5 class="fw-bold text-dark mb-1">Curs Privat</h5>
+                                <p class="text-secondary mb-3 small">Nu sunteți înscris la această disciplină. Trimiteți o solicitare de înscriere pentru a debloca conținutul lecțiilor.</p>
+                                @using (Html.BeginForm("Enroll", "Courses", new { id = Model.Id }, FormMethod.Post, new { @class = "m-0" }))
+                                {
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-warning btn-md rounded-pill fw-bold px-4 shadow-sm">
+                                        <i class="fa fa-user-plus me-2"></i> Doresc să mă înscriu la curs
+                                    </button>
+                                }
+                            </div>
+                        }
+                        else if (enrollmentRequest.IsPending)
+                        {
+                            <!-- Solicitare trimisă, în așteptare de confirmare din partea prof-ului -->
+                            <i class="fa fa-clock text-warning fa-3x me-3 animate-pulse"></i>
+                            <div>
+                                <h5 class="fw-bold text-dark mb-1">Solicitare în curs de aprobare</h5>
+                                <p class="text-secondary mb-0 small">Cererea dumneavoastră a fost înregistrată la data de @enrollmentRequest.RequestDate.ToString("dd.MM.yyyy HH:mm") și se află în curs de analiză de către mentorul cursului.</p>
+                            </div>
+                        }
+                        else if (!enrollmentRequest.IsApproved)
+                        {
+                            <!-- Solicitarea a fost respinsă de profesor, dar îi dăm voie să retransmită cererea -->
+                            <i class="fa fa-times-circle text-danger fa-3x me-3"></i>
+                            <div>
+                                <h5 class="fw-bold text-dark mb-1">Solicitare Respinsă</h5>
+                                <p class="text-secondary mb-3 small">Solicitarea dumneavoastră anterioară de înscriere a fost respinsă. Puteți retransmite o cerere nouă dacă este necesar.</p>
+                                @using (Html.BeginForm("Enroll", "Courses", new { id = Model.Id }, FormMethod.Post, new { @class = "m-0" }))
+                                {
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-outline-danger btn-md rounded-pill fw-bold px-4 shadow-sm">
+                                        <i class="fa fa-redo me-2"></i> Retrimite Solicitare
+                                    </button>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
             @* --- PROGRAMA (CURRICULUM) --- *@
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h4 class="fw-bold mb-0"><i class="fa fa-stream text-primary me-2"></i>Curriculum</h4>
@@ -85,7 +192,7 @@
                     foreach (var lesson in Model.Lessons.OrderBy(l => l.Id))
                     {
                         bool isDone = completedIds.Contains(lesson.Id);
-                        <div class="list-group-item d-flex justify-content-between align-items-center p-3">
+                        <div class="list-group-item d-flex justify-content-between align-items-center p-3" style="overflow: visible;">
                             <div class="d-flex align-items-center text-start">
                                 <i class="fa @(isDone ? "fa-check-circle text-success" : "fa-circle-play text-primary") fs-5 me-3"></i>
                                 <h6 class="mb-0 @(isDone ? "text-muted text-decoration-line-through" : "fw-bold")">@lesson.Title</h6>
@@ -103,11 +210,24 @@
 
                                 @if (isOwner)
                                 {
-                                    <div class="dropdown">
-                                        <button class="btn btn-link text-muted p-0" data-bs-toggle="dropdown"><i class="fa fa-ellipsis-v"></i></button>
-                                        <ul class="dropdown-menu shadow border-0">
-                                            <li><a class="dropdown-item" href="@Url.Action("Edit", "Lessons", new { id = lesson.Id })"><i class="fa fa-edit me-2"></i>Editează</a></li>
-                                            <li><a class="dropdown-item text-danger" href="@Url.Action("Delete", "Lessons", new { id = lesson.Id })"><i class="fa fa-trash me-2"></i>Șterge</a></li>
+                                    <div class="custom-dropdown-container">
+                                        <button class="btn btn-link text-muted p-1 js-dropdown-trigger"
+                                                type="button"
+                                                data-target-menu="menu-@lesson.Id">
+                                            <i class="fa fa-ellipsis-v fs-5" style="pointer-events: none;"></i>
+                                        </button>
+                                        <ul class="custom-dropdown-menu" id="menu-@lesson.Id">
+                                            <li>
+                                                <a class="custom-dropdown-item" href="@Url.Action("Edit", "Lessons", new { id = lesson.Id })">
+                                                    <i class="fa fa-edit me-2 text-primary"></i> Editează
+                                                </a>
+                                            </li>
+                                            <li><div class="custom-dropdown-divider"></div></li>
+                                            <li>
+                                                <a class="custom-dropdown-item text-danger" href="@Url.Action("Delete", "Lessons", new { id = lesson.Id })" onclick="return confirm('Sigur doriți să ștergeți această lecție?')">
+                                                    <i class="fa fa-trash me-2"></i> Șterge
+                                                </a>
+                                            </li>
                                         </ul>
                                     </div>
                                 }
@@ -124,7 +244,7 @@
 
         @* --- SIDEBAR --- *@
         <div class="col-lg-4">
-            <div class="card border-0 shadow-sm rounded-4 p-4 text-center sticky-top" style="top: 20px;">
+            <div class="card border-0 shadow-sm rounded-4 p-4 text-center sticky-top" style="top: 20px; z-index: 10;">
                 @if (isOwner)
                 {
                     <div class="text-start p-3 bg-light rounded-3 border">
@@ -153,7 +273,12 @@
                             </button>
                         }
 
-                        <button class="btn btn-outline-dark btn-sm w-100 rounded-pill fw-bold mt-3 shadow-sm" type="button" data-bs-toggle="collapse" data-bs-target="#listElevi">
+                        <button class="btn btn-outline-dark btn-sm w-100 rounded-pill fw-bold mt-3 shadow-sm"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-toggle="collapse"
+                                data-bs-target="#listElevi"
+                                data-target="#listElevi">
                             <i class="fa fa-users me-2"></i>Elevi înscriși (@(Model.EnrolledStudents?.Count ?? 0))
                         </button>
 
@@ -182,13 +307,21 @@
                     </div>
                 }
 
-                @* --- TESTARE AI --- *@
+                @* --- AFISARE STATUT PENTRU ELEVII INSCRISI --- *@
+                @if (isEnrolled)
+                {
+                    <div class="text-start p-3 bg-success bg-opacity-10 rounded-3 border border-success border-opacity-20 mb-3">
+                        <span class="small text-success d-block fw-bold"><i class="fa fa-check-circle me-1"></i> Sunteți membru activ al cursului</span>
+                    </div>
+                }
+
+                @* --- BUTONUL DE QUIZ (CURAT, REDENUMIT DIN TESTARE AI) --- *@
                 @if (hasAccess)
                 {
                     <div class="mt-4">
-                        <p class="text-start mb-2 small"><i class="fa fa-robot text-success me-2"></i> Evaluare disponibilă</p>
-                        <a href="@Url.Action("Index", "Quizzes", new { courseId = Model.Id })" class="btn btn-warning w-100 rounded-pill fw-bold shadow-sm py-2">
-                            <i class="fa fa-pencil-alt me-2"></i> TESTARE AI
+                        <p class="text-start mb-2 small"><i class="fa fa-circle-question text-success me-2"></i> Evaluare disponibilă</p>
+                        <a href="@Url.Action("Index", "Quizzes", new { courseId = Model.Id })" class="btn btn-warning w-100 rounded-pill fw-bold shadow-sm py-2 text-dark">
+                            <i class="fa fa-pencil-alt me-2"></i> Quiz
                         </a>
                     </div>
                 }
@@ -198,7 +331,6 @@
 </div>
 
 @section scripts {
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         $(document).ready(function () {
@@ -206,6 +338,24 @@
                 placeholder: "Select Students",
                 allowClear: true,
                 width: '100%'
+            });
+
+            $(document).on('click', '.js-dropdown-trigger', function (e) {
+                e.stopPropagation();
+
+                var targetMenuId = $(this).attr('data-target-menu');
+                var targetMenu = $('#' + targetMenuId);
+
+                if (targetMenu.hasClass('show-menu')) {
+                    targetMenu.removeClass('show-menu');
+                } else {
+                    $('.custom-dropdown-menu').removeClass('show-menu');
+                    targetMenu.addClass('show-menu');
+                }
+            });
+
+            $(document).on('click', function () {
+                $('.custom-dropdown-menu').removeClass('show-menu');
             });
         });
     </script>

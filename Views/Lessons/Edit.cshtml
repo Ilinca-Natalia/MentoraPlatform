@@ -8,7 +8,8 @@
     <div class="card shadow-sm p-4">
         <h2 class="text-primary border-bottom pb-2">Editare: @Model.Title</h2>
 
-        @using (Html.BeginForm())
+        <!-- Modificat: Adăugat enctype pentru a suporta încărcarea de fișiere la editare -->
+        @using (Html.BeginForm("Edit", "Lessons", FormMethod.Post, new { enctype = "multipart/form-data" }))
         {
             @Html.AntiForgeryToken()
             @Html.HiddenFor(m => m.Id)
@@ -21,13 +22,24 @@
             </div>
 
             <div class="mb-3">
+                <label class="form-label fw-bold">Link Video (YouTube/Vimeo)</label>
+                @Html.TextBoxFor(m => m.VideoUrl, new { @class = "form-control", placeholder = "https://www.youtube.com/watch?v=..." })
+            </div>
+
+            <div class="mb-3">
                 @Html.LabelFor(m => m.Content, new { @class = "form-label fw-bold" })
                 @Html.TextAreaFor(m => m.Content, new { @id = "editor", @class = "form-control" })
             </div>
 
+            <div class="mb-4">
+                <label class="form-label fw-bold text-secondary small">Adaugă materiale suplimentare noi (.pdf, .zip, .docx)</label>
+                <input type="file" name="attachments" multiple class="form-control p-3" />
+                <small class="text-muted">Fișierele selectate vor fi adăugate la resursele deja existente ale acestei lecții.</small>
+            </div>
+
             <div class="mt-4">
                 <button type="submit" class="btn btn-primary">Salvează Modificările</button>
-                @Html.ActionLink("Anulează", "Details", "Courses", new { id = Model.CourseId }, new { @class = "btn btn-outline-secondary" })
+                <a href="@Url.Action("Details", "Courses", new { id = Model.CourseId })" class="btn btn-outline-secondary">Anulează</a>
             </div>
         }
     </div>

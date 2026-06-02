@@ -1,46 +1,180 @@
 ﻿@using Microsoft.AspNet.Identity
 @model IEnumerable<MentoraPlatform.Models.Quiz>
 
-<div class="container mt-4">
-    <h2 class="fw-bold mb-4"><i class="fa fa-tasks text-primary me-2"></i>Gestionare Teste</h2>
+@{
+    ViewBag.Title = "Centru de Testare";
+    var currentUserId = User.Identity.GetUserId();
+    bool isAdmin = User.IsInRole("Admin");
 
-    <div class="row">
-        @foreach (var quiz in Model)
+    // 1. FILTRARE SECURIZATĂ: Păstrăm doar testele pe care utilizatorul are dreptul legal să le vadă
+    var accessibleQuizzes = Model.Where(quiz =>
+    {
+        if (isAdmin) return true; // Adminul are acces necondiționat la tot
+
+        // Profesorul vede doar testele de la cursurile pe care le predă el
+        bool isTeacherOwner = User.IsInRole("Professor") && quiz.Course.TeacherId == currentUserId;
+
+        // Studentul vede doar testele de la cursurile la care este înscris activ
+        bool isStudentEnrolled = User.IsInRole("Student") && quiz.Course.EnrolledStudents != null && quiz.Course.EnrolledStudents.Any(s => s.Id == currentUserId);
+
+        return isTeacherOwner || isStudentEnrolled;
+    }).ToList();
+
+    // 2. GRUPARE: Împărțim testele filtrate în funcție de Cursul de care aparțin
+    var groupedQuizzes = accessibleQuizzes.GroupBy(q => q.Course).OrderBy(g => g.Key.Title);
+}
+
+<style>
+    .course-group-card {
+        border-radius: 16px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.02);
+        overflow: hidden;
+        background: #ffffff;
+    }
+
+    .course-header-gradient {
+        background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+        color: #ffffff;
+        padding: 20px 24px;
+    }
+
+    .quiz-row {
+        transition: background-color 0.2s ease;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+        .quiz-row:last-child {
+            border-bottom: none;
+        }
+
+        .quiz-row:hover {
+            background-color: #f8fafc;
+        }
+
+    .badge-questions {
+        background-color: #eff6ff;
+        color: #1d4ed8;
+        font-weight: 600;
+        border: 1px solid #bfdbfe;
+    }
+</style>
+
+<div class="container mt-4 pb-5 text-start">
+    <!-- Antet Pagina -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="fa fa-tasks text-primary me-2"></i>Teste disponibile</h2>
+        </div>
+    </div>
+
+    <!-- Verificăm dacă utilizatorul are acces la cel puțin un test -->
+    @if (groupedQuizzes.Any())
+    {
+        foreach (var group in groupedQuizzes)
         {
-            // Verificăm dacă utilizatorul curent este profesorul acestui curs
-            bool isOwner = User.Identity.GetUserId() == quiz.Course.TeacherId || User.IsInRole("Admin");
+            var course = group.Key;
+            var quizzesInCourse = group.ToList();
 
-            <div class="col-md-4 mb-4">
-                <div class="card h-100 border-0 shadow-sm transition-hover">
-                    <div class="card-body">
-                        <h5 class="card-title fw-bold">@quiz.Title</h5>
-                        <p class="text-muted small mb-2">Curs: @quiz.Course.Title</p>
-
-                        <span class="badge bg-soft-primary text-primary">
-                            <i class="fa fa-question-circle me-1"></i> @quiz.Questions.Count Întrebări
+            <div class="course-group-card mb-5">
+                <!-- Header Curs -->
+                <div class="course-header-gradient d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <div>
+                        <span class="text-uppercase small fw-bold opacity-75">Cursul de specialitate</span>
+                        <h4 class="fw-bold m-0">@course.Title</h4>
+                    </div>
+                    <div>
+                        <span class="badge bg-white text-primary px-3 py-2 rounded-pill fw-bold shadow-sm">
+                            <i class="fa fa-layer-group me-1"></i> @quizzesInCourse.Count @(quizzesInCourse.Count == 1 ? "Test disponibil" : "Teste disponibile")
                         </span>
                     </div>
+                </div>
 
-                    <div class="card-footer bg-white border-0 d-flex gap-2">
-                        @if (User.IsInRole("Student"))
-                        {
-                            <a href="@Url.Action("TakeQuiz", new { id = quiz.Id })" class="btn btn-primary w-100 rounded-pill fw-bold">
-                                ÎNCEPE TESTUL
-                            </a>
-                        }
+                <!-- Lista de Teste în interiorul Cursului -->
+                <div class="p-0">
+                    <div class="table-responsive">
+                        <table class="table table-align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4 py-3 text-muted uppercase small" style="width: 50%;">Denumire Evaluare (Test)</th>
+                                    <th class="py-3 text-muted uppercase small text-center" style="width: 20%;">Structură</th>
+                                    <th class="pe-4 py-3 text-muted uppercase small text-end" style="width: 30%;">Acțiuni disponibile</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var quiz in quizzesInCourse)
+                                {
+                                    bool isOwner = User.Identity.GetUserId() == quiz.Course.TeacherId || User.IsInRole("Admin");
 
-                        @if (isOwner)
-                        {
-                            <a href="@Url.Action("Edit", new { id = quiz.Id })" class="btn btn-outline-warning btn-sm rounded-pill flex-fill">
-                                <i class="fa fa-edit"></i> Edit
-                            </a>
-                            <a href="@Url.Action("Delete", new { id = quiz.Id })" class="btn btn-outline-danger btn-sm rounded-pill flex-fill">
-                                <i class="fa fa-trash"></i> Șterge
-                            </a>
-                        }
+                                    <tr class="quiz-row">
+                                        <!-- Titlu Test -->
+                                        <td class="ps-4 py-3.5">
+                                            <div class="d-flex align-items-center">
+                                                <div class="bg-primary bg-opacity-10 text-primary p-2 rounded-circle me-3">
+                                                    <i class="fa fa-file-invoice fs-5"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="fw-bold text-dark mb-0">@quiz.Title</h6>
+                                                    <small class="text-muted">Atașat la disciplina: @course.Title</small>
+                                                </div>
+                                            </div>
+                                        </td>
+
+                                        <!-- Număr întrebări -->
+                                        <td class="py-3.5 text-center">
+                                            <span class="badge badge-questions px-3 py-2 rounded-pill">
+                                                <i class="fa fa-question-circle me-1"></i> @quiz.Questions.Count Întrebări
+                                            </span>
+                                        </td>
+
+                                        <!-- Butoane de Acțiune -->
+                                        <td class="pe-4 py-3.5 text-end">
+                                            <div class="d-inline-flex gap-2">
+                                                @if (User.IsInRole("Student"))
+                                                {
+                                                    <a href="@Url.Action("TakeQuiz", new { id = quiz.Id })" class="btn btn-primary btn-sm px-4 rounded-pill fw-bold shadow-sm">
+                                                        <i class="fa fa-pencil-alt me-1"></i> Susține Testul
+                                                    </a>
+                                                }
+
+                                                @if (isOwner)
+                                                {
+                                                    <a href="@Url.Action("Edit", new { id = quiz.Id })" class="btn btn-outline-warning btn-sm px-3 rounded-pill fw-bold">
+                                                        <i class="fa fa-edit me-1"></i> Editează
+                                                    </a>
+                                                    <a href="@Url.Action("Delete", new { id = quiz.Id })" class="btn btn-outline-danger btn-sm px-3 rounded-pill fw-bold" onclick="return confirm('Sigur doriți să ștergeți testul: @quiz.Title?')">
+                                                        <i class="fa fa-trash-can me-1"></i> Șterge
+                                                    </a>
+                                                }
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
         }
-    </div>
+    }
+    else
+    {
+        <!-- Mesaj în cazul în care nu există teste accesibile -->
+        <div class="card border-0 shadow-sm text-center p-5 rounded-4 bg-light">
+            <div class="py-5">
+                <i class="fa fa-folder-open text-muted fa-4x mb-3"></i>
+                <h4 class="fw-bold text-dark">Niciun test disponibil</h4>
+                <p class="text-muted">
+                    Momentan nu există teste grilă create sau nu aveți acces la cursurile asociate.<br />
+                    @if (User.IsInRole("Student"))
+                    {
+                        <span>Asigurați-vă că sunteți înscris la cel puțin un curs din platformă pentru a vedea evaluările.</span>
+                    }
+                </p>
+                <a href="@Url.Action("Index", "Courses")" class="btn btn-primary rounded-pill px-4 mt-3">
+                    <i class="fa fa-graduation-cap me-2"></i> Explorați cursurile active
+                </a>
+            </div>
+        </div>
+    }
 </div>

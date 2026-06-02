@@ -61,7 +61,7 @@
                         if (User.IsInRole("Admin"))
                         {
                             <li class="nav-item">
-                                @Html.ActionLink("Utilizatori", "Index", "Users", null, new { @class = "nav-link text-danger" })
+                                @Html.ActionLink("Utilizatori", "Index", "Users", null, new { @class = "nav-link" })
                             </li>
                         }
                     }
@@ -76,7 +76,7 @@
         @RenderBody()
         <hr />
         <footer>
-            <p>&copy; @DateTime.Now.Year - My ASP.NET Application</p>
+            <p>&copy; @DateTime.Now.Year - Mentora Application</p>
         </footer>
     </div>
 

@@ -1,41 +1,255 @@
 ﻿@model IEnumerable<MentoraPlatform.Models.QuizResult>
 
-<div class="container mt-4">
-    <div class="card shadow-sm border-0">
-        <div class="card-header bg-dark text-white py-3">
-            <h3 class="m-0"><i class="fa fa-users-cog me-2"></i>Catalog Note Elevi</h3>
+@{
+    ViewBag.Title = "Catalog Note Elevi";
+
+    // 1. STATISTICI GLOBALE
+    var totalSubmissions = Model.Count();
+    var globalAverage = totalSubmissions > 0 ? Math.Round(Model.Average(r => r.Score), 2) : 0;
+    var passedCount = Model.Count(r => r.Score >= 5);
+    var failedCount = totalSubmissions - passedCount;
+    var passRate = totalSubmissions > 0 ? Math.Round(((double)passedCount / totalSubmissions) * 100, 0) : 0;
+
+    // 2. STATISTICI DISTRIBUȚIE NOTE (Foarte importantă în mediul educațional)
+    var distUnder5 = Model.Count(r => r.Score < 5);
+    var dist5to7 = Model.Count(r => r.Score >= 5 && r.Score < 7);
+    var dist7to9 = Model.Count(r => r.Score >= 7 && r.Score < 9);
+    var dist9to10 = Model.Count(r => r.Score >= 9 && r.Score <= 10);
+
+    // 3. STATISTICI MEDII PER CURS
+    var courseStats = Model.GroupBy(r => r.Quiz.Course.Title)
+                           .Select(g => new
+                           {
+                               CourseName = g.Key,
+                               AverageScore = Math.Round(g.Average(r => r.Score), 2)
+                           }).OrderByDescending(g => g.AverageScore).ToList();
+}
+
+<!-- Includem biblioteca Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="container mt-4 pb-5 text-start">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="fa fa-users-cog text-primary me-2"></i>Catalog Note Elevi</h2>
+            <p class="text-muted mb-0">Urmăriți performanțele generale ale elevilor din platformă prin rapoarte detaliate.</p>
         </div>
-        <div class="card-body">
-            <table class="table table-striped align-middle">
-                <thead>
-                    <tr>
-                        <th>Student</th>
-                        <th>Curs</th>
-                        <th>Test</th>
-                        <th>Dată</th>
-                        <th class="text-center">Scor</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var res in Model)
-                    {
+    </div>
+
+    <!-- 1. DASHBOARD GLOBAL NOTE -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-3 p-4 bg-white">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <span class="text-uppercase text-muted small fw-bold">Medie Globală</span>
+                        <h2 class="fw-bold mt-1 mb-0 text-primary">@globalAverage</h2>
+                    </div>
+                    <div class="bg-primary bg-opacity-10 text-primary p-3 rounded-circle">
+                        <i class="fa fa-graduation-cap fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-3 p-4 bg-white">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <span class="text-uppercase text-muted small fw-bold">Rată Promovare</span>
+                        <h2 class="fw-bold mt-1 mb-0 text-success">@passRate%</h2>
+                    </div>
+                    <div class="bg-success bg-opacity-10 text-success p-3 rounded-circle">
+                        <i class="fa fa-percentage fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-3 p-4 bg-white">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <span class="text-uppercase text-muted small fw-bold">Elevi Promovați</span>
+                        <h2 class="fw-bold mt-1 mb-0 text-success">@passedCount</h2>
+                    </div>
+                    <div class="bg-success bg-opacity-10 text-success p-3 rounded-circle">
+                        <i class="fa fa-user-check fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-3 p-4 bg-white">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <span class="text-uppercase text-muted small fw-bold">Elevi Respinși</span>
+                        <h2 class="fw-bold mt-1 mb-0 text-danger">@failedCount</h2>
+                    </div>
+                    <div class="bg-danger bg-opacity-10 text-danger p-3 rounded-circle">
+                        <i class="fa fa-user-times fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. PANOU GRAFICE INTERACTIVE -->
+    @if (totalSubmissions > 0)
+    {
+        <div class="row g-4 mb-5">
+            <!-- Distribuția Notei -->
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm rounded-3 p-4 bg-white h-100">
+                    <h5 class="fw-bold text-dark mb-4"><i class="fa fa-chart-bar text-primary me-2"></i>Distribuția notelor pe intervale de evaluare</h5>
+                    <div style="height: 260px; position: relative;">
+                        <canvas id="gradeDistributionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <!-- Comparație pe cursuri -->
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm rounded-3 p-4 bg-white h-100">
+                    <h5 class="fw-bold text-dark mb-4"><i class="fa fa-chart-line text-primary me-2"></i>Comparație performanțe medii pe Cursuri</h5>
+                    <div style="height: 260px; position: relative;">
+                        <canvas id="coursePerformanceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- 3. CATALOG CENTRALIZAT NOTE -->
+    <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-header bg-white py-3 border-0">
+            <h5 class="fw-bold text-dark m-0"><i class="fa fa-users-cog text-primary me-2"></i>Istoric Centralizat Note Elevi</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
                         <tr>
-                            <td>
-                                <div class="fw-bold">@res.Student.FirstName @res.Student.LastName</div>
-                                <small class="text-muted">@res.Student.Email</small>
-                            </td>
-                            <td>@res.Quiz.Course.Title</td>
-                            <td>@res.Quiz.Title</td>
-                            <td>@res.DateTaken.ToShortDateString()</td>
-                            <td class="text-center">
-                                <div class="badge @(res.Score >= 5 ? "bg-success" : "bg-danger") fs-6">
-                                    @res.Score
-                                </div>
-                            </td>
+                            <th class="ps-4">Student</th>
+                            <th>Curs</th>
+                            <th>Test Susținut</th>
+                            <th>Dată evaluare</th>
+                            <th class="text-center">Notă obținută</th>
                         </tr>
-                    }
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            foreach (var res in Model.OrderByDescending(r => r.DateTaken))
+                            {
+                                <tr>
+                                    <td class="ps-4">
+                                        <div class="fw-bold text-dark">@res.Student.FirstName @res.Student.LastName</div>
+                                        <small class="text-muted">@res.Student.Email</small>
+                                    </td>
+                                    <td>@res.Quiz.Course.Title</td>
+                                    <td>@res.Quiz.Title</td>
+                                    <td class="text-muted">@res.DateTaken.ToString("dd.MM.yyyy")</td>
+                                    <td class="text-center">
+                                        <span class="badge @(res.Score >= 5 ? "bg-success bg-opacity-10 text-success" : "bg-danger bg-opacity-10 text-danger") px-3 py-2 fs-6 rounded-pill">
+                                            @res.Score
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center py-5 text-muted">
+                                    Niciun rezultat înregistrat în baza de date până în acest moment.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
+
+@if (totalSubmissions > 0)
+{
+    @section scripts {
+        <script>
+            // --- 1. CONFIGURARE GRAFIC DISTRIBUȚIE NOTE ---
+            var ctxDist = document.getElementById('gradeDistributionChart').getContext('2d');
+            var gradeDistributionChart = new Chart(ctxDist, {
+                type: 'bar',
+                data: {
+                    labels: ['Note < 5', 'Note 5 - 6.99', 'Note 7 - 8.99', 'Note 9 - 10'],
+                    datasets: [{
+                        label: 'Număr Elevi',
+                        data: [@distUnder5, @dist5to7, @dist7to9, @dist9to10],
+                        backgroundColor: [
+                            'rgba(239, 68, 68, 0.85)',  // Roșu
+                            'rgba(245, 158, 11, 0.85)', // Portocaliu
+                            'rgba(59, 130, 246, 0.85)',  // Albastru
+                            'rgba(16, 185, 129, 0.85)'  // Verde
+                        ],
+                        borderWidth: 0,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            ticks: { stepSize: 1 },
+                            min: 0
+                        }
+                    }
+                }
+            });
+
+            // --- 2. CONFIGURARE GRAFIC PERFORMANȚE CURSURI ---
+            var courseNames = [
+                @foreach (var c in courseStats) {
+                    @Html.Raw("'" + c.CourseName + "',")
+                }
+            ];
+
+            var courseAverages = [
+                @foreach (var c in courseStats) {
+                    @c.AverageScore.ToString().Replace(",", ".")@Html.Raw(",")
+                }
+            ];
+
+            var ctxCourse = document.getElementById('coursePerformanceChart').getContext('2d');
+            var coursePerformanceChart = new Chart(ctxCourse, {
+                type: 'bar',
+                data: {
+                    labels: courseNames,
+                    datasets: [{
+                        label: 'Medie Curs',
+                        data: courseAverages,
+                        backgroundColor: 'rgba(79, 70, 229, 0.8)', // Indigo
+                        borderWidth: 0,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y', // Convertim în bar-chart orizontal pentru lizibilitatea titlurilor cursurilor
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            min: 0,
+                            max: 10,
+                            ticks: { stepSize: 1 }
+                        }
+                    }
+                }
+            });
+        </script>
+    }
+}

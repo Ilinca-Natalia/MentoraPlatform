@@ -1,4 +1,4 @@
-﻿using MentoraPlatform.Models;
+using MentoraPlatform.Models;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -32,7 +32,7 @@ namespace MentoraPlatform.Controllers
                 {
                     string currentUserId = User.Identity.GetUserId();
                     var project = context.CodeProjects.Find(id.Value);
-
+                    
                     // Verificăm securitatea: utilizatorul logat trebuie să fie proprietarul proiectului
                     if (project != null && project.UserId == currentUserId)
                     {
@@ -40,7 +40,7 @@ namespace MentoraPlatform.Controllers
                     }
                 }
             }
-
+            
             // Dacă nu avem ID, deschidem un mediu de lucru complet curat
             return View(new CodeProject { Title = "Proiect Web Nou" });
         }

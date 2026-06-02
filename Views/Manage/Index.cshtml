@@ -1,89 +1,169 @@
 ﻿@model MentoraPlatform.Models.IndexViewModel
 @{
-    ViewBag.Title = "Manage";
+    ViewBag.Title = "Panou Control Profil";
+    var pendingRequests = ViewBag.PendingRequests as List<MentoraPlatform.Models.EnrollmentRequest>;
+    var approvedEnrollments = ViewBag.ApprovedEnrollments as List<MentoraPlatform.Models.EnrollmentRequest>;
 }
 
-<main aria-labelledby="title">
-    <h2 id="title">@ViewBag.Title.</h2>
+<div class="container mt-4 text-start pb-5">
+    <div class="row">
+        <!-- Antet Dashboard Profil -->
+        <div class="col-12 mb-4">
+            <h2 class="fw-bold mb-1"><i class="fa fa-user-circle text-primary me-2"></i>Contul Meu Mentora</h2>
+            <p class="text-muted">Gestionați securitatea parolei și vizualizați activitatea curentă în cadrul platformei.</p>
+            <hr />
+        </div>
 
-    <p class="text-success">@ViewBag.StatusMessage</p>
-    <div>
-        <h4>Change your account settings</h4>
-        <hr />
-        <dl class="dl-horizontal">
-            <dt>Password:</dt>
-            <dd>
-                [
-                @if (Model.HasPassword)
+        <!-- Coloana Stângă: Setări Parolă Securizată -->
+        <div class="col-lg-6 mb-4">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+                <h5 class="fw-bold text-dark mb-4 border-bottom pb-2">
+                    <i class="fa fa-shield-alt text-primary me-2"></i>Securitate Cont
+                </h5>
+
+                @if (!string.IsNullOrEmpty(ViewBag.StatusMessage))
                 {
-                    @Html.ActionLink("Change your password", "ChangePassword")
+                    <div class="alert alert-success alert-dismissible fade show rounded-pill px-4 py-2 small mb-4" role="alert">
+                        <i class="fa fa-check-circle me-1"></i> @ViewBag.StatusMessage
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" data-dismiss="alert" aria-label="Close"></button>
+                    </div>
                 }
-                else
-                {
-                    @Html.ActionLink("Create", "SetPassword")
-                }
-                ]
-            </dd>
-            <dt>External Logins:</dt>
-            <dd>
-                @Model.Logins.Count [
-                @Html.ActionLink("Manage", "ManageLogins") ]
-            </dd>
-            @*
-                Phone Numbers can used as a second factor of verification in a two-factor authentication system.
-                
-                See <a href="https://go.microsoft.com/fwlink/?LinkId=403804">this article</a>
-                    for details on setting up this ASP.NET application to support two-factor authentication using SMS.
-                
-                Uncomment the following block after you have set up two-factor authentication
-            *@
-            @*  
-                <dt>Phone Number:</dt>
-                <dd>
-                    @(Model.PhoneNumber ?? "None")
-                    @if (Model.PhoneNumber != null)
-                    {
-                        <br />
-                        <text>[&nbsp;&nbsp;@Html.ActionLink("Change", "AddPhoneNumber")&nbsp;&nbsp;]</text>
-                        using (Html.BeginForm("RemovePhoneNumber", "Manage", FormMethod.Post, new { role = "form" }))
+
+                <div class="d-flex flex-column gap-4">
+                    <!-- Secțiune Parolă Simplificată -->
+                    <div class="d-flex justify-content-between align-items-center bg-light p-3 rounded-3">
+                        <div class="me-3">
+                            <h6 class="fw-bold text-dark mb-0">Parolă de acces</h6>
+                            <small class="text-muted">Modificați parola curentă folosită pentru conectare.</small>
+                        </div>
+                        <div>
+                            @if (Model.HasPassword)
+                            {
+                                <a href="@Url.Action("ChangePassword")" class="btn btn-primary btn-sm rounded-pill fw-bold px-4 shadow-sm">
+                                    <i class="fa fa-edit me-1"></i> Schimbă Parola
+                                </a>
+                            }
+                            else
+                            {
+                                <a href="@Url.Action("SetPassword")" class="btn btn-success btn-sm rounded-pill fw-bold px-4 shadow-sm">
+                                    <i class="fa fa-plus me-1"></i> Creează Parolă
+                                </a>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Informație Securitate Suplimentară -->
+                    <div class="p-3 bg-light rounded-3 border-start border-primary border-4 text-start">
+                        <h6 class="fw-bold text-dark mb-1 small"><i class="fa fa-info-circle text-primary me-1"></i> Notă privind securitatea:</h6>
+                        <p class="text-muted small mb-0">
+                            Pentru a asigura integritatea datelor dumneavoastră pe Mentora, vă recomandăm să folosiți o parolă complexă, unică și să nu o partajați cu alte persoane.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Coloana Dreaptă: Notificări Cereri de Înscriere (pentru Profesori) sau Mesaj Elev -->
+        <div class="col-lg-6 mb-4">
+            @if (User.IsInRole("Professor"))
+            {
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+                    <h5 class="fw-bold text-dark mb-3 border-bottom pb-2">
+                        <i class="fa fa-bell text-warning me-2"></i>Cereri de Înscriere în Așteptare
+                    </h5>
+                    <p class="text-muted small mb-4">Următorii elevi au solicitat înscrierea în cursurile dumneavoastră și așteaptă aprobarea:</p>
+
+                    <div style="max-height: 380px; overflow-y: auto;" class="pe-1">
+                        @if (pendingRequests != null && pendingRequests.Any())
                         {
-                            @Html.AntiForgeryToken()
-                            <text>[<input type="submit" value="Remove" class="btn-link" />]</text>
+                            foreach (var req in pendingRequests)
+                            {
+                                <div class="p-3 mb-3 bg-light rounded-3 border-start border-warning border-4 transition-hover text-start">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="bg-warning bg-opacity-10 text-warning p-2.5 rounded-circle me-3">
+                                            <i class="fas fa-user-clock"></i>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="fw-bold text-dark mb-0">@req.Student.FirstName @req.Student.LastName</h6>
+                                            <small class="text-muted" style="font-size:11px;">Curs solicitat: <strong class="text-primary">@req.Course.Title</strong></small>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-end gap-2 mt-2 pt-2 border-top">
+                                        @using (Html.BeginForm("ApproveRequest", "Courses", FormMethod.Post, new { @class = "d-inline" }))
+                                        {
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="requestId" value="@req.Id" />
+                                            <button type="submit" class="btn btn-success btn-xs rounded-pill px-3 py-1 fw-bold text-white small" style="font-size: 11px;">
+                                                <i class="fas fa-check me-1"></i> Aprobă
+                                            </button>
+                                        }
+                                        @using (Html.BeginForm("RejectRequest", "Courses", FormMethod.Post, new { @class = "d-inline" }))
+                                        {
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="requestId" value="@req.Id" />
+                                            <button type="submit" class="btn btn-outline-danger btn-xs rounded-pill px-3 py-1 fw-bold small" style="font-size: 11px;" onclick="return confirm('Sigur doriți să respingeți această cerere?')">
+                                                <i class="fas fa-times me-1"></i> Respinge
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+                            }
                         }
-                    }
-                    else
-                    {
-                        <text>[&nbsp;&nbsp;@Html.ActionLink("Add", "AddPhoneNumber")
-                    }
-                </dd>
-            *@
-            <dt>Two-Factor Authentication:</dt>
-            <dd>
-                <p>
-                    There are no two-factor authentication providers configured. See <a href="https://go.microsoft.com/fwlink/?LinkId=403804">this article</a>
-                    for details on setting up this ASP.NET application to support two-factor authentication.
-                </p>
-                @*@if (Model.TwoFactor)
-                    {
-                        using (Html.BeginForm("DisableTwoFactorAuthentication", "Manage", FormMethod.Post, new { role = "form" }))
+                        else
                         {
-                            @Html.AntiForgeryToken()
-                            <text>Enabled
-                            <input type="submit" value="Disable" class="btn btn-link" />
-                            </text>
+                            <div class="text-center py-5 text-muted">
+                                <i class="fa fa-bell-slash fa-3x mb-3 text-muted"></i>
+                                <p class="mb-0 fw-bold">Nicio cerere în așteptare.</p>
+                                <small class="text-muted">Când elevii vor trimite solicitări de înscriere, acestea vor apărea aici instantaneu spre aprobare.</small>
+                            </div>
                         }
-                    }
-                    else
+                    </div>
+                </div>
+            }
+            else
+            {
+                <!-- Mesaj de Bun Venit și Notificări Aprobare (pentru Studenți) -->
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+                    <h5 class="fw-bold text-dark mb-3 border-bottom pb-2">
+                        <i class="fa fa-graduation-cap text-primary me-2"></i>Activitatea mea didactică
+                    </h5>
+
+                    @if (approvedEnrollments != null && approvedEnrollments.Any())
                     {
-                        using (Html.BeginForm("EnableTwoFactorAuthentication", "Manage", FormMethod.Post, new { role = "form" }))
-                        {
-                            @Html.AntiForgeryToken()
-                            <text>Disabled
-                            <input type="submit" value="Enable" class="btn btn-link" />
-                            </text>
-                        }
-                    }*@
-            </dd>
-        </dl>
+                        <p class="text-muted small text-start mb-3">Cereri aprobate recent de profesori:</p>
+                        <div style="max-height: 200px; overflow-y: auto;" class="pe-1 mb-4">
+                            @foreach (var enrollment in approvedEnrollments)
+                            {
+                                <div class="alert alert-success d-flex align-items-center rounded-3 p-3 mb-2 text-start border-0 shadow-sm bg-success bg-opacity-10 text-success">
+                                    <i class="fas fa-check-circle fa-2x me-3"></i>
+                                    <div>
+                                        <h6 class="fw-bold mb-0 text-dark">Înscriere confirmată!</h6>
+                                        <small class="text-muted">Cererea pentru cursul <strong class="text-primary">@enrollment.Course.Title</strong> a fost aprobată.</small>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+
+                    <div class="py-3 text-center">
+                        <p class="text-muted px-4 small">Explorați resursele noastre, accesați laboratoarele de codare offline sau online și susțineți quiz-urile active!</p>
+                        <a href="@Url.Action("Index", "Courses")" class="btn btn-primary rounded-pill fw-bold px-4 shadow-sm">
+                            <i class="fa fa-book me-1"></i> Explorează Cursuri active
+                        </a>
+                    </div>
+                </div>
+            }
+        </div>
     </div>
-</main>
+</div>
+
+<style>
+    .transition-hover {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+        .transition-hover:hover {
+            transform: translateX(3px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+</style>
