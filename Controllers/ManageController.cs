@@ -16,7 +16,7 @@ namespace MentoraPlatform.Controllers
     {
         private ApplicationSignInManager _signInManager;
         private ApplicationUserManager _userManager;
-        private ApplicationDbContext db = new ApplicationDbContext();
+        private readonly ApplicationDbContext db = new ApplicationDbContext();
 
         public ManageController()
         {
@@ -24,32 +24,20 @@ namespace MentoraPlatform.Controllers
 
         public ManageController(ApplicationUserManager userManager, ApplicationSignInManager signInManager)
         {
-            UserManager = userManager;
-            SignInManager = signInManager;
+            _userManager = userManager;
+            _signInManager = signInManager;
         }
 
         public ApplicationSignInManager SignInManager
         {
-            get
-            {
-                return _signInManager ?? HttpContext.GetOwinContext().Get<ApplicationSignInManager>();
-            }
-            private set
-            {
-                _signInManager = value;
-            }
+            get => _signInManager ?? HttpContext.GetOwinContext().Get<ApplicationSignInManager>();
+            private set => _signInManager = value;
         }
 
         public ApplicationUserManager UserManager
         {
-            get
-            {
-                return _userManager ?? HttpContext.GetOwinContext().GetUserManager<ApplicationUserManager>();
-            }
-            private set
-            {
-                _userManager = value;
-            }
+            get => _userManager ?? HttpContext.GetOwinContext().GetUserManager<ApplicationUserManager>();
+            private set => _userManager = value;
         }
 
         // GET: /Manage/Index
@@ -58,35 +46,28 @@ namespace MentoraPlatform.Controllers
             ViewBag.StatusMessage =
                 message == ManageMessageId.ChangePasswordSuccess ? "Parola dumneavoastră a fost modificată cu succes."
                 : message == ManageMessageId.SetPasswordSuccess ? "Parola locală a fost configurată."
-                : message == ManageMessageId.SetTwoFactorSuccess ? "Autentificarea în doi pași a fost setată."
                 : message == ManageMessageId.Error ? "A apărut o eroare neașteptată."
-                : message == ManageMessageId.AddPhoneSuccess ? "Numărul de telefon a fost adăugat."
-                : message == ManageMessageId.RemovePhoneSuccess ? "Numărul de telefon a fost eliminat."
                 : "";
 
             var userId = User.Identity.GetUserId();
 
-            // NOTIFICĂRI PROFESOR: Trimitem cererile în așteptare pentru cursurile pe care le predă profesorul logat
             if (User.IsInRole("Professor"))
             {
-                var pendingRequests = db.EnrollmentRequests
-                                         .Include(r => r.Student)
-                                         .Include(r => r.Course)
-                                         .Where(r => r.Course.TeacherId == userId && r.IsPending)
-                                         .OrderByDescending(r => r.RequestDate)
-                                         .ToList();
-                ViewBag.PendingRequests = pendingRequests;
+                ViewBag.PendingRequests = db.EnrollmentRequests
+                                           .Include(r => r.Student)
+                                           .Include(r => r.Course)
+                                           .Where(r => r.Course.TeacherId == userId && r.IsPending)
+                                           .OrderByDescending(r => r.RequestDate)
+                                           .ToList();
             }
 
-            // NOTIFICĂRI STUDENT: Căutăm cursurile la care a primit acces aprobat recent pentru a-l felicita în tablou
             if (User.IsInRole("Student"))
             {
-                var approvedEnrollments = db.EnrollmentRequests
-                                            .Include(r => r.Course)
-                                            .Where(r => r.StudentId == userId && !r.IsPending && r.IsApproved)
-                                            .OrderByDescending(r => r.RequestDate)
-                                            .ToList();
-                ViewBag.ApprovedEnrollments = approvedEnrollments;
+                ViewBag.ApprovedEnrollments = db.EnrollmentRequests
+                                                .Include(r => r.Course)
+                                                .Where(r => r.StudentId == userId && !r.IsPending && r.IsApproved)
+                                                .OrderByDescending(r => r.RequestDate)
+                                                .ToList();
             }
 
             var model = new IndexViewModel
@@ -98,35 +79,6 @@ namespace MentoraPlatform.Controllers
                 BrowserRemembered = await AuthenticationManager.TwoFactorBrowserRememberedAsync(userId)
             };
             return View(model);
-        }
-
-        // POST: /Manage/RemoveLogin
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<ActionResult> RemoveLogin(string loginProvider, string providerKey)
-        {
-            ManageMessageId? message;
-            var result = await UserManager.RemoveLoginAsync(User.Identity.GetUserId(), new UserLoginInfo(loginProvider, providerKey));
-            if (result.Succeeded)
-            {
-                var user = await UserManager.FindByIdAsync(User.Identity.GetUserId());
-                if (user != null)
-                {
-                    await SignInManager.SignInAsync(user, isPersistent: false, rememberBrowser: false);
-                }
-                message = ManageMessageId.RemoveLoginSuccess;
-            }
-            else
-            {
-                message = ManageMessageId.Error;
-            }
-            return RedirectToAction("ManageLogins", new { Message = message });
-        }
-
-        // GET: /Manage/ChangePassword
-        public ActionResult ChangePassword()
-        {
-            return View();
         }
 
         // POST: /Manage/ChangePassword
@@ -149,34 +101,6 @@ namespace MentoraPlatform.Controllers
                 return RedirectToAction("Index", new { Message = ManageMessageId.ChangePasswordSuccess });
             }
             AddErrors(result);
-            return View(model);
-        }
-
-        // GET: /Manage/SetPassword
-        public ActionResult SetPassword()
-        {
-            return View();
-        }
-
-        // POST: /Manage/SetPassword
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<ActionResult> SetPassword(SetPasswordViewModel model)
-        {
-            if (ModelState.IsValid)
-            {
-                var result = await UserManager.AddPasswordAsync(User.Identity.GetUserId(), model.NewPassword);
-                if (result.Succeeded)
-                {
-                    var user = await UserManager.FindByIdAsync(User.Identity.GetUserId());
-                    if (user != null)
-                    {
-                        await SignInManager.SignInAsync(user, isPersistent: false, rememberBrowser: false);
-                    }
-                    return RedirectToAction("Index", new { Message = ManageMessageId.SetPasswordSuccess });
-                }
-                AddErrors(result);
-            }
             return View(model);
         }
 
@@ -203,15 +127,7 @@ namespace MentoraPlatform.Controllers
         }
 
         #region Helpers
-        private const string XsrfKey = "XsrfId";
-
-        private IAuthenticationManager AuthenticationManager
-        {
-            get
-            {
-                return HttpContext.GetOwinContext().Authentication;
-            }
-        }
+        private IAuthenticationManager AuthenticationManager => HttpContext.GetOwinContext().Authentication;
 
         private void AddErrors(IdentityResult result)
         {
@@ -224,22 +140,12 @@ namespace MentoraPlatform.Controllers
         private bool HasPassword()
         {
             var user = UserManager.FindById(User.Identity.GetUserId());
-            if (user != null)
-            {
-                return user.PasswordHash != null;
-            }
-            return false;
+            return user != null && user.PasswordHash != null;
         }
 
         public enum ManageMessageId
         {
-            AddPhoneSuccess,
-            ChangePasswordSuccess,
-            SetTwoFactorSuccess,
-            SetPasswordSuccess,
-            RemoveLoginSuccess,
-            RemovePhoneSuccess,
-            Error
+            AddPhoneSuccess, ChangePasswordSuccess, SetTwoFactorSuccess, SetPasswordSuccess, RemoveLoginSuccess, RemovePhoneSuccess, Error
         }
         #endregion
     }

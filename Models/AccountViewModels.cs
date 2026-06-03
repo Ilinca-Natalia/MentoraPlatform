@@ -5,71 +5,71 @@ namespace MentoraPlatform.Models
 {
     public class ForgotViewModel
     {
-        [Required]
+        [Required(ErrorMessage = "Adresa de email este obligatorie.")]
+        [EmailAddress(ErrorMessage = "Formatul adresei de email nu este valid.")]
         [Display(Name = "Email")]
         public string Email { get; set; }
     }
 
     public class LoginViewModel
     {
-        [Required]
+        [Required(ErrorMessage = "Adresa de email este obligatorie.")]
         [Display(Name = "Email")]
-        [EmailAddress]
+        [EmailAddress(ErrorMessage = "Formatul adresei de email nu este valid.")]
         public string Email { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Parola este obligatorie.")]
         [DataType(DataType.Password)]
-        [Display(Name = "Password")]
+        [Display(Name = "Parolă")]
         public string Password { get; set; }
 
-        [Display(Name = "Remember me?")]
+        [Display(Name = "Ține-mă minte?")]
         public bool RememberMe { get; set; }
     }
 
-    // MODIFICAT: Am eliminat complet proprietatea SelectedRole
     public class RegisterViewModel
     {
-        [Required]
-        [EmailAddress]
+        [Required(ErrorMessage = "Email-ul este obligatoriu.")]
+        [EmailAddress(ErrorMessage = "Formatul adresei de email nu este valid.")]
         [Display(Name = "Email")]
         public string Email { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Prenumele este obligatoriu.")]
         [Display(Name = "Prenume")]
         public string FirstName { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Numele este obligatoriu.")]
         [Display(Name = "Nume")]
         public string LastName { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Parola este obligatorie.")]
         [StringLength(100, ErrorMessage = "Parola trebuie să aibă cel puțin {2} caractere.", MinimumLength = 6)]
         [DataType(DataType.Password)]
-        [Display(Name = "Password")]
+        [Display(Name = "Parolă")]
         public string Password { get; set; }
 
         [DataType(DataType.Password)]
-        [Display(Name = "Confirm password")]
+        [Display(Name = "Confirmă parola")]
         [Compare("Password", ErrorMessage = "Parola și confirmarea parolei nu se potrivesc.")]
         public string ConfirmPassword { get; set; }
     }
 
     public class ResetPasswordViewModel
     {
-        [Required]
-        [EmailAddress]
+        [Required(ErrorMessage = "Email-ul este obligatoriu.")]
+        [EmailAddress(ErrorMessage = "Formatul adresei de email nu este valid.")]
         [Display(Name = "Email")]
         public string Email { get; set; }
 
-        [Required]
-        [StringLength(100, ErrorMessage = "The {0} must be at least {2} characters long.", MinimumLength = 6)]
+        [Required(ErrorMessage = "Parola este obligatorie.")]
+        [StringLength(100, ErrorMessage = "Parola trebuie să aibă cel puțin {2} caractere.", MinimumLength = 6)]
         [DataType(DataType.Password)]
-        [Display(Name = "Password")]
+        [Display(Name = "Parolă")]
         public string Password { get; set; }
 
         [DataType(DataType.Password)]
-        [Display(Name = "Confirm password")]
-        [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
+        [Display(Name = "Confirmă parola")]
+        [Compare("Password", ErrorMessage = "Parola și confirmarea parolei nu se potrivesc.")]
         public string ConfirmPassword { get; set; }
 
         public string Code { get; set; }
@@ -77,8 +77,8 @@ namespace MentoraPlatform.Models
 
     public class ForgotPasswordViewModel
     {
-        [Required]
-        [EmailAddress]
+        [Required(ErrorMessage = "Email-ul este obligatoriu.")]
+        [EmailAddress(ErrorMessage = "Formatul adresei de email nu este valid.")]
         [Display(Name = "Email")]
         public string Email { get; set; }
     }

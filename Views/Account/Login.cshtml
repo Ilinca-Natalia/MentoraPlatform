@@ -19,7 +19,7 @@
                     @using (Html.BeginForm("Login", "Account", new { ReturnUrl = ViewBag.ReturnUrl }, FormMethod.Post, new { role = "form" }))
                     {
                         @Html.AntiForgeryToken()
-                        @Html.ValidationSummary(true, "", new { @class = "alert alert-danger rounded-3 py-2 small" })
+                        @Html.ValidationSummary(false, "", new { @class = "alert alert-danger rounded-3 py-2 small" })
 
                         <!-- Câmp Email -->
                         <div class="mb-3">
