@@ -279,6 +279,47 @@ namespace MentoraPlatform.Controllers
             }
             return RedirectToAction("Details", new { id = courseId });
         }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Professor, Admin")]
+        public ActionResult AddStudent(int courseId, string studentEmail)
+        {
+            var course = db.Courses.Include(c => c.EnrolledStudents).FirstOrDefault(c => c.Id == courseId);
+            var student = db.Users.FirstOrDefault(u => u.Email == studentEmail);
+
+            if (course != null && student != null)
+            {
+                // Verificăm dacă e deja înscris
+                if (!course.EnrolledStudents.Any(s => s.Id == student.Id))
+                {
+                    course.EnrolledStudents.Add(student);
+
+                    // Opțional: Creăm o cerere aprobată pentru evidență
+                    var req = new EnrollmentRequest
+                    {
+                        CourseId = courseId,
+                        StudentId = student.Id,
+                        IsPending = false,
+                        IsApproved = true,
+                        RequestDate = DateTime.Now
+                    };
+                    db.EnrollmentRequests.Add(req);
+
+                    db.SaveChanges();
+                    TempData["SuccessMessage"] = "Studentul a fost înscris cu succes!";
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "Studentul este deja înscris la acest curs.";
+                }
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Studentul sau Cursul nu a fost găsit.";
+            }
+
+            return RedirectToAction("Details", new { id = courseId });
+        }
 
         protected override void Dispose(bool disposing)
         {
