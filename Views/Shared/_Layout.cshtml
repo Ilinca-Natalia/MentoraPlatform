@@ -79,6 +79,147 @@
             <p>&copy; @DateTime.Now.Year - Mentora Application</p>
         </footer>
     </div>
+    <!-- CSS pentru Chat -->
+    <style>
+        #chatWidget {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 10000;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        #toggleChat {
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+            border: none;
+            cursor: pointer;
+            color: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: transform 0.3s;
+        }
+
+            #toggleChat:hover {
+                transform: scale(1.1);
+            }
+        /* Am mutat display: none aici pentru a fi preluat corect */
+        #chatWindow {
+            display: none;
+            width: 350px;
+            height: 500px;
+            background: white;
+            border-radius: 20px;
+            bottom: 80px;
+            right: 0;
+            position: absolute;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            overflow: hidden;
+            flex-direction: column;
+            border: 1px solid #eee;
+        }
+
+        #messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f9f9f9;
+        }
+
+        .msg {
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            border-radius: 15px;
+            max-width: 80%;
+            font-size: 0.9em;
+        }
+
+            .msg.user {
+                background: #6e8efb;
+                color: white;
+                align-self: flex-end;
+                margin-left: auto;
+            }
+
+            .msg.ai {
+                background: #e9e9eb;
+                color: #333;
+            }
+
+        #chatInput {
+            border: none;
+            padding: 15px;
+            border-top: 1px solid #eee;
+            outline: none;
+        }
+
+        .loader {
+            display: none;
+            text-align: center;
+            font-size: 0.8em;
+            color: #888;
+            padding: 5px;
+        }
+    </style>
+
+    <!-- Structura HTML -->
+    <div id="chatWidget">
+        <button id="toggleChat"><i class="fas fa-comment"></i></button>
+        <div id="chatWindow">
+            <div id="messages"></div>
+            <div id="loader" class="loader">Mentora caută...</div>
+            <input type="text" id="chatInput" placeholder="Ce vrei să înveți azi?" />
+        </div>
+    </div>
+
+    <!-- Script actualizat -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const toggleBtn = document.getElementById('toggleChat');
+            const win = document.getElementById('chatWindow');
+            const input = document.getElementById('chatInput');
+            const msgs = document.getElementById('messages');
+            const loader = document.getElementById('loader');
+
+            toggleBtn.onclick = () => {
+                // Verificăm stilul inline sau computed
+                win.style.display = (win.style.display === 'none' || win.style.display === '') ? 'flex' : 'none';
+            };
+
+            input.onkeypress = async (e) => {
+                if (e.key === 'Enter' && input.value.trim() !== '') {
+                    const val = input.value;
+                    msgs.innerHTML += `<div class="msg user">${val}</div>`;
+                    input.value = '';
+                    loader.style.display = 'block';
+
+                    // Verifică dacă există token-ul
+                    const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+                    const token = tokenInput ? tokenInput.value : '';
+
+                    try {
+                        const response = await fetch('/Courses/Chat', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded', '__RequestVerificationToken': token },
+                            body: 'message=' + encodeURIComponent(val)
+                        });
+                        const data = await response.json();
+                        loader.style.display = 'none';
+
+                        const replyHtml = (data.url && data.url !== "#") ?
+                            `<a href="${data.url}" style="color:#6e8efb; font-weight:bold;">${data.reply}</a>` : data.reply;
+
+                        msgs.innerHTML += `<div class="msg ai">${replyHtml}</div>`;
+                        msgs.scrollTop = msgs.scrollHeight;
+                    } catch {
+                        loader.style.display = 'none';
+                        msgs.innerHTML += `<div class="msg ai">Eroare de conexiune.</div>`;
+                    }
+                }
+            };
+        });
+    </script>
 
     @Scripts.Render("~/bundles/jquery")
     @Scripts.Render("~/bundles/bootstrap")

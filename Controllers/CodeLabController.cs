@@ -15,8 +15,7 @@ namespace MentoraPlatform.Controllers
     public class CodeLabController : Controller
     {
         // Cheia privată RapidAPI Judge0 securizată pe server (utilizată în Algorithm Lab)
-        private readonly string _rapidApiKey = "111e6ca7demshbf2cfe32e1d7e42p164ecfjsnf902d1544759";
-
+        private readonly string _rapidApiKey = "tu-pune-aici-cheia-ta-de-API-RapidAPI-Judge0";
         // Pagina principală a laboratoarelor (Lobby)
         public ActionResult Index()
         {

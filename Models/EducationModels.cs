@@ -81,6 +81,7 @@ namespace MentoraPlatform.Models
         public virtual Course Course { get; set; }
 
         public DateTime RequestDate { get; set; } = DateTime.Now;
+        public DateTime? ApprovalDate { get; set; }
         public bool IsPending { get; set; } = true;
         public bool IsApproved { get; set; } = false;
     }

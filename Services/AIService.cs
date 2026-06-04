@@ -12,8 +12,7 @@ namespace MentoraPlatform.Services
     public class AIService
     {
         // Pune aici cheia ta de API pe care ai generat-o
-        private readonly string _apiKey = "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";
-
+        private readonly string _apiKey = "tu-pune-aici-cheia-ta-de-API-OpenAI";
         public async Task<QuizPreviewViewModel> GenerateQuizAsync(string lessonContent)
         {
             // 1. Curățăm textul de tag-uri HTML pentru a nu consuma tokeni inutili
@@ -104,5 +103,35 @@ namespace MentoraPlatform.Services
                 }
             };
         }
+        public async Task<string> GetCourseRecommendationAsync(string userMessage, string context)
+{
+    using (var client = new HttpClient())
+    {
+        client.DefaultRequestHeaders.Add("Authorization", $"Bearer {_apiKey}");
+
+        var requestBody = new
+        {
+            model = "gpt-3.5-turbo",
+            messages = new[] {
+                new { 
+                    role = "system", 
+                    content = $@"Ești un asistent AI pentru platforma Mentora. 
+                                Analizează cererea utilizatorului raportată la baza de date: {context}. 
+                                Caută informația în: Titlul cursului, Descrierea cursului, Titlurile lecțiilor și Conținutul lecțiilor.
+                                Răspunde DOAR cu ID-ul (cifra) cursului cel mai potrivit. Dacă nu există nicio potrivire, răspunde cu 0." 
+                },
+                new { role = "user", content = userMessage }
+            },
+            temperature = 0.2
+        };
+
+        var response = await client.PostAsync("https://api.openai.com/v1/chat/completions", new StringContent(JsonConvert.SerializeObject(requestBody), Encoding.UTF8, "application/json"));
+        var responseString = await response.Content.ReadAsStringAsync();
+        dynamic result = JsonConvert.DeserializeObject(responseString);
+        
+        string content = result.choices[0].message.content.ToString();
+        return content.Trim();
+    }
+}
     }
 }

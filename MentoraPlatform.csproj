@@ -359,6 +359,10 @@
     <Compile Include="Migrations\202606021447397_AddEnrollmentRequests.Designer.cs">
       <DependentUpon>202606021447397_AddEnrollmentRequests.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202606051531516_AdaugareDataAprobare.cs" />
+    <Compile Include="Migrations\202606051531516_AdaugareDataAprobare.Designer.cs">
+      <DependentUpon>202606051531516_AdaugareDataAprobare.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\AccountViewModels.cs" />
     <Compile Include="Models\CodeProject.cs" />
@@ -366,6 +370,7 @@
     <Compile Include="Models\IdentityModels.cs" />
     <Compile Include="Models\ManageViewModels.cs" />
     <Compile Include="Models\QuizPreviewViewModel.cs" />
+    <Compile Include="Models\ViewModels.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\AIService.cs" />
     <Compile Include="Services\ProgressService.cs" />
@@ -510,6 +515,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202606021447397_AddEnrollmentRequests.resx">
       <DependentUpon>202606021447397_AddEnrollmentRequests.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202606051531516_AdaugareDataAprobare.resx">
+      <DependentUpon>202606051531516_AdaugareDataAprobare.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

@@ -35,5 +35,11 @@ namespace MentoraPlatform.Services
 
             return (double)completedLessons / totalLessons * 100;
         }
+        public DateTime? GetEnrollmentDate(string userId, int courseId)
+        {
+            return _db.EnrollmentRequests
+                .FirstOrDefault(r => r.StudentId == userId && r.CourseId == courseId && r.IsApproved)
+                ?.ApprovalDate;
+        }
     }
 }

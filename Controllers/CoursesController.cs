@@ -1,10 +1,13 @@
-﻿using System;
+﻿using MentoraPlatform.Models;
+using MentoraPlatform.Services;
+using Microsoft.AspNet.Identity;
+using System;
 using System.Data.Entity;
 using System.Linq;
 using System.Net;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Web.Mvc;
-using MentoraPlatform.Models;
-using Microsoft.AspNet.Identity;
 
 namespace MentoraPlatform.Controllers
 {
@@ -184,6 +187,7 @@ namespace MentoraPlatform.Controllers
                 // Schimbăm starea cererii
                 request.IsPending = false;
                 request.IsApproved = true;
+                request.ApprovalDate = DateTime.Now;
 
                 // Adăugăm elevul în mod oficial la curs
                 var course = db.Courses.Include(c => c.EnrolledStudents).FirstOrDefault(c => c.Id == request.CourseId);
@@ -225,7 +229,6 @@ namespace MentoraPlatform.Controllers
             return RedirectToAction("Index", "Manage");
         }
 
-        // GET: Courses/Details/5
         public ActionResult Details(int? id)
         {
             if (id == null) return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
@@ -239,21 +242,49 @@ namespace MentoraPlatform.Controllers
             if (course == null) return HttpNotFound();
 
             var currentUserId = User.Identity.GetUserId();
-
-            // Verificăm dacă există vreo cerere de înscriere trimisă de studentul curent
-            ViewBag.EnrollmentRequest = db.EnrollmentRequests
-                                          .FirstOrDefault(r => r.CourseId == id && r.StudentId == currentUserId);
-
+            var progressService = new ProgressService();
             var enrolledIds = course.EnrolledStudents.Select(s => s.Id).ToList();
+
+            // 1. Construim ViewModel-ul de progres
+            var progressModel = new CourseProgressViewModel
+            {
+                CourseId = course.Id,
+                CourseTitle = course.Title,
+                Lessons = course.Lessons.Select(l => new LessonStatusViewModel
+                {
+                    LessonId = l.Id,
+                    Title = l.Title,
+                    IsCompleted = db.UserLessonProgresses.Any(p => p.LessonId == l.Id && p.UserId == currentUserId)
+                }).ToList()
+            };
+
+            // Calculăm procentajul
+            if (progressModel.Lessons.Count > 0)
+            {
+                double completed = progressModel.Lessons.Count(l => l.IsCompleted);
+                progressModel.ProgressPercentage = (completed / progressModel.Lessons.Count) * 100;
+            }
+
+            // 2. Construim ViewModel-ul principal
+            var model = new CourseDetailsViewModel
+            {
+                Course = course,
+                Progress = progressModel,
+                IsEnrolled = enrolledIds.Contains(currentUserId),
+                HasPendingRequest = db.EnrollmentRequests.Any(r => r.CourseId == id && r.StudentId == currentUserId)
+            };
+
+            // ViewBag-uri pentru datele de administrare
+            ViewBag.EnrollmentRequest = db.EnrollmentRequests.FirstOrDefault(r => r.CourseId == id && r.StudentId == currentUserId);
             var studentRoleId = db.Roles.FirstOrDefault(r => r.Name == "Student")?.Id;
 
             ViewBag.RawStudentList = db.Users
-                .Where(u => u.Roles.Any(r => r.RoleId == studentRoleId))
-                .Where(u => u.Id != course.TeacherId)
-                .Where(u => !enrolledIds.Contains(u.Id))
-                .ToList();
+                        .Where(u => u.Roles.Any(r => r.RoleId == studentRoleId))
+                        .Where(u => u.Id != course.TeacherId)
+                        .Where(u => !enrolledIds.Contains(u.Id))
+                        .ToList();
 
-            return View(course);
+            return View(model);
         }
 
         [HttpPost]
@@ -320,7 +351,40 @@ namespace MentoraPlatform.Controllers
 
             return RedirectToAction("Details", new { id = courseId });
         }
+        [HttpPost]
+        public async Task<ActionResult> Chat(string message)
+        {
+            // Includem tot ce avem nevoie pentru context
+            var courses = db.Courses.Include(c => c.Lessons).ToList();
 
+            string context = "Baza de date cursuri: ";
+            foreach (var c in courses)
+            {
+                // Curățăm conținutul lecțiilor de tag-uri HTML (pentru a economisi tokeni)
+                string lessonsSummary = "";
+                foreach (var l in c.Lessons)
+                {
+                    string cleanContent = Regex.Replace(l.Content ?? "", "<.*?>", string.Empty);
+                    // Luăm doar primii 100 de caractere din conținutul lecției pentru context
+                    lessonsSummary += $"[Lecția: {l.Title}, Detalii: {cleanContent.Substring(0, Math.Min(cleanContent.Length, 100))}...] ";
+                }
+
+                context += $"ID: {c.Id} | Curs: {c.Title} | Descriere: {c.Description} | {lessonsSummary}; ";
+            }
+
+            var aiService = new AIService();
+            var responseFromAi = await aiService.GetCourseRecommendationAsync(message, context);
+
+            int courseId = 0;
+            int.TryParse(responseFromAi, out courseId);
+            var course = db.Courses.Find(courseId);
+
+            return Json(new
+            {
+                reply = course != null ? "Îți recomand: " + course.Title : "Nu am găsit un curs care să conțină lecții sau descrieri despre asta.",
+                url = course != null ? Url.Action("Details", "Courses", new { id = course.Id }) : "#"
+            });
+        }
         protected override void Dispose(bool disposing)
         {
             if (disposing) db.Dispose();
