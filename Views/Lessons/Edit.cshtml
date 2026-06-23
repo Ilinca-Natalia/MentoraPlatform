@@ -48,6 +48,17 @@
 @section Scripts {
     <script src="https://cdn.ckeditor.com/4.22.1/standard/ckeditor.js"></script>
     <script>
-        CKEDITOR.replace('editor');
+        // Această linie transformă automat textarea-ul cu id="editor" într-un editor stil Word
+        CKEDITOR.replace('editor', {
+            // Putem adăuga setări extra pentru a face editorul mai prietenos
+            toolbar: [
+                { name: 'basicstyles', items: ['Bold', 'Italic', 'Underline', 'Strike', '-', 'RemoveFormat'] },
+                { name: 'paragraph', items: ['NumberedList', 'BulletedList', '-', 'Outdent', 'Indent', '-', 'Blockquote'] },
+                { name: 'styles', items: ['Format', 'Font', 'FontSize'] },
+                { name: 'colors', items: ['TextColor', 'BGColor'] },
+                { name: 'insert', items: ['Table', 'HorizontalRule', 'SpecialChar'] }
+            ],
+            height: '400px'
+        });
     </script>
 }

@@ -41,5 +41,31 @@ namespace MentoraPlatform.Services
                 .FirstOrDefault(r => r.StudentId == userId && r.CourseId == courseId && r.IsApproved)
                 ?.ApprovalDate;
         }
+        public StudentRiskViewModel GetStudentRisk(string userId, int courseId)
+        {
+            // 1. Progresul actual (folosind metoda ta)
+            double progress = GetCourseProgress(userId, courseId);
+
+            // 2. Ultima activitate (zile de la ultima lecție)
+            var lastActivity = _db.UserLessonProgresses
+                                 .Where(p => p.UserId == userId && p.Lesson.CourseId == courseId)
+                                 .OrderByDescending(p => p.CompletedDate)
+                                 .Select(p => p.CompletedDate)
+                                 .FirstOrDefault();
+
+            int days = lastActivity != default ? (DateTime.Now - lastActivity).Days : 30;
+
+            // 3. Media notelor
+            var scores = _db.QuizResults.Where(r => r.StudentId == userId && r.Quiz.CourseId == courseId);
+            double avg = scores.Any() ? scores.Average(r => r.Score) : 0;
+
+            return new StudentRiskViewModel
+            {
+                StudentId = userId,
+                ProgressPercentage = progress,
+                AverageScore = avg,
+                DaysSinceLastActivity = days
+            };
+        }
     }
 }

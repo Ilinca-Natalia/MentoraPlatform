@@ -41,27 +41,39 @@ namespace MentoraPlatform.Controllers
         }
 
         // GET: Users
-        public ActionResult Index()
+        public ActionResult Index(string searchString, string roleFilter)
         {
-            // AUTO-SEEDING: Creăm automat rolurile de bază în SQL Server dacă acestea lipsesc din tabela AspNetRoles
-            // Acest pas previne erorile de tip Foreign Key la salvarea modificărilor în baza de date
+            // --- AUTO-SEEDING (Codul tău original) ---
             var roleManager = new RoleManager<IdentityRole>(new RoleStore<IdentityRole>(db));
 
-            if (!roleManager.RoleExists("Admin"))
+            if (!roleManager.RoleExists("Admin")) roleManager.Create(new IdentityRole("Admin"));
+            if (!roleManager.RoleExists("Professor")) roleManager.Create(new IdentityRole("Professor"));
+            if (!roleManager.RoleExists("Student")) roleManager.Create(new IdentityRole("Student"));
+
+            // --- FILTRARE ---
+            // Începem prin a lua interogarea ca IQueryable pentru a putea filtra înainte de .ToList()
+            var usersQuery = db.Users.AsQueryable();
+
+            // 1. Filtrare după nume (FirstName sau LastName)
+            if (!string.IsNullOrWhiteSpace(searchString))
             {
-                roleManager.Create(new IdentityRole("Admin"));
-            }
-            if (!roleManager.RoleExists("Professor"))
-            {
-                roleManager.Create(new IdentityRole("Professor"));
-            }
-            if (!roleManager.RoleExists("Student"))
-            {
-                roleManager.Create(new IdentityRole("Student"));
+                string search = searchString.Trim();
+                usersQuery = usersQuery.Where(u => u.FirstName.Contains(search) || u.LastName.Contains(search));
             }
 
-            // Preluăm toți utilizatorii din baza de date SQL
-            var users = db.Users.ToList();
+            // 2. Filtrare după rol
+            if (!string.IsNullOrWhiteSpace(roleFilter))
+            {
+                // Join între Users și AspNetRoles prin intermediul relației Identity
+                usersQuery = usersQuery.Where(u => u.Roles.Any(r => r.RoleId == db.Roles.FirstOrDefault(rol => rol.Name == roleFilter).Id));
+            }
+
+            // Trimitem datele pentru dropdown-ul de roluri în View
+            ViewBag.RoleFilter = new SelectList(new[] { "Admin", "Professor", "Student" }, roleFilter);
+            ViewBag.SearchString = searchString;
+
+            // Executăm query-ul și trimitem lista către View
+            var users = usersQuery.ToList();
             return View(users);
         }
 
@@ -125,21 +137,43 @@ namespace MentoraPlatform.Controllers
         // POST: Users/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public ActionResult DeleteConfirmed(string id)
+        public async Task<ActionResult> DeleteConfirmed(string id)
         {
-            // Prevenim eliminarea propriului cont de admin din panou
             if (id == User.Identity.GetUserId())
             {
-                TempData["ErrorMessage"] = "Nu vă puteți șterge propriul cont administrativ activ!";
+                TempData["ErrorMessage"] = "Nu vă puteți șterge propriul cont!";
                 return RedirectToAction("Index");
             }
 
-            var user = db.Users.Find(id);
+            var user = await UserManager.FindByIdAsync(id);
             if (user != null)
             {
-                db.Users.Remove(user);
-                db.SaveChanges();
-                TempData["SuccessMessage"] = "Contul utilizatorului a fost șters definitiv din baza de date.";
+                // 1. Ștergem proiectele de cod ale utilizatorului (aici era conflictul)
+                var projects = db.CodeProjects.Where(p => p.UserId == id);
+                db.CodeProjects.RemoveRange(projects);
+
+                // 2. Ștergem cererile de înscriere
+                var enrollments = db.EnrollmentRequests.Where(r => r.StudentId == id);
+                db.EnrollmentRequests.RemoveRange(enrollments);
+
+                // 3. Ștergem progresul lecțiilor
+                var progress = db.UserLessonProgresses.Where(p => p.UserId == id);
+                db.UserLessonProgresses.RemoveRange(progress);
+
+                // Salvează modificările înainte de ștergerea user-ului
+                await db.SaveChangesAsync();
+
+                // 4. Acum putem șterge utilizatorul
+                var result = await UserManager.DeleteAsync(user);
+
+                if (result.Succeeded)
+                {
+                    TempData["SuccessMessage"] = "Utilizator șters cu succes.";
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "Eroare la ștergerea utilizatorului: " + string.Join(", ", result.Errors);
+                }
             }
             return RedirectToAction("Index");
         }

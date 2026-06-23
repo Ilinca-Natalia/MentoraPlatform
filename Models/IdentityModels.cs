@@ -1,8 +1,9 @@
-﻿using System.Data.Entity;
+﻿using Microsoft.AspNet.Identity;
+using Microsoft.AspNet.Identity.EntityFramework;
+using System.Collections.Generic;
+using System.Data.Entity;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using Microsoft.AspNet.Identity;
-using Microsoft.AspNet.Identity.EntityFramework;
 
 namespace MentoraPlatform.Models
 {
@@ -10,7 +11,7 @@ namespace MentoraPlatform.Models
     {
         public string FirstName { get; set; }
         public string LastName { get; set; }
-
+        public virtual ICollection<Course> EnrolledCourses { get; set; } = new List<Course>();
         public async Task<ClaimsIdentity> GenerateUserIdentityAsync(UserManager<ApplicationUser> manager)
         {
             var userIdentity = await manager.CreateIdentityAsync(this, DefaultAuthenticationTypes.ApplicationCookie);
@@ -37,10 +38,20 @@ namespace MentoraPlatform.Models
         public DbSet<Question> Questions { get; set; }
         public DbSet<Choice> Choices { get; set; }
         public DbSet<QuizResult> QuizResults { get; set; }
-
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // Configurăm relația Many-to-Many
+            modelBuilder.Entity<Course>()
+                .HasMany(c => c.EnrolledStudents)
+                .WithMany(u => u.EnrolledCourses)
+                .Map(m =>
+                {
+                    m.ToTable("CourseStudents"); // Numele tabelului de joncțiune
+                    m.MapLeftKey("CourseId");
+                    m.MapRightKey("StudentId");
+                });
         }
 
         public static ApplicationDbContext Create()

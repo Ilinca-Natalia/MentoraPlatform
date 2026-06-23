@@ -27,76 +27,91 @@
         </div>
     }
 
-    <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
-        <div class="card-header py-4 d-flex justify-content-between align-items-center border-0" style="background: linear-gradient(135deg, #1e293b, #3b82f6);">
-            <div>
-                <h3 class="m-0 fw-bold text-white"><i class="fa fa-users-cog me-2"></i>Control Utilizatori</h3>
-                <p class="text-white text-opacity-75 m-0 small mt-1">Gestionați rolurile și accesul membrilor în platformă.</p>
-            </div>
-            <span class="badge bg-white bg-opacity-15 text-dark fs-6 px-3 py-2 rounded-pill shadow-sm border border-black border-opacity-25">
-                Total: @Model.Count()
-            </span>
+<div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+    <div class="card-header py-4 d-flex justify-content-between align-items-center border-0" style="background: linear-gradient(135deg, #1e293b, #3b82f6);">
+        <div>
+            <h3 class="m-0 fw-bold text-white"><i class="fa fa-users-cog me-2"></i>Control Utilizatori</h3>
+            <p class="text-white text-opacity-75 m-0 small mt-1">Gestionați rolurile și accesul membrilor în platformă.</p>
         </div>
-        <div class="card-body p-0">
-            @Html.AntiForgeryToken()
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr class="text-secondary" style="font-size: 13px; font-weight: 700; text-transform: uppercase;">
-                            <th class="ps-4 py-3">Utilizator</th>
-                            <th class="py-3">Email</th>
-                            <th class="text-center py-3" style="width: 25%;">Rol</th>
-                            <th class="text-center pe-4 py-3" style="width: 20%;">Acțiuni</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var user in Model)
-                        {
-                            var roles = userManager.GetRoles(user.Id);
-                            bool isCurrentAdmin = user.Email == User.Identity.Name;
-
-                            <tr>
-                                <td class="ps-4 py-3">
-                                    <div class="fw-bold text-dark">@user.FirstName @user.LastName</div>
-                                </td>
-                                <td class="text-secondary py-3">@user.Email</td>
-                                <td class="text-center py-3">
-                                    @if (isCurrentAdmin)
-                                    {
-                                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-4 py-2 text-uppercase rounded-pill fw-bold small">
-                                            <i class="fas fa-shield-alt me-1"></i> Admin (Sesiune activă)
-                                        </span>
-                                    }
-                                    else
-                                    {
-                                        <select class="form-select form-select-sm rounded-pill px-3 py-1.5 border-secondary border-opacity-25 text-dark fw-bold text-center js-role-select shadow-sm"
-                                                style="width: 150px; display: inline-block; cursor: pointer; background-color: #f8fafc;"
-                                                data-user-id="@user.Id">
-                                            <option value="Admin" @(roles.Contains("Admin") ? "selected" : "")>Admin</option>
-                                            <option value="Professor" @(roles.Contains("Professor") || roles.Contains("Teacher") ? "selected" : "")>Profesor</option>
-                                            <option value="Student" @(roles.Contains("Student") || (!roles.Contains("Admin") && !roles.Contains("Professor")) ? "selected" : "")>Student</option>
-                                        </select>
-                                    }
-                                </td>
-                                <td class="text-center pe-4 py-3">
-                                    @if (!isCurrentAdmin)
-                                    {
-                                        <a href="@Url.Action("Delete", "Users", new { id = user.Id })" class="btn btn-outline-danger btn-sm rounded-pill px-3 fw-bold">
-                                            <i class="fa fa-user-times me-1"></i> Elimină
-                                        </a>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted small italic">Sesiune curentă</span>
-                                    }
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+        <span class="badge bg-white bg-opacity-15 text-dark fs-6 px-3 py-2 rounded-pill shadow-sm border border-black border-opacity-25">
+            Total: @Model.Count()
+        </span>
+    </div>
+    <div class="card mb-4 shadow-sm border-0 p-3">
+        @using (Html.BeginForm("Index", "Users", FormMethod.Get, new { @class = "row g-3 align-items-center" }))
+        {
+            <div class="col-md-5">
+                <input type="text" name="searchString" class="form-control rounded-pill" placeholder="Caută după nume..." value="@ViewBag.SearchString" />
             </div>
+            <div class="col-md-4">
+                @Html.DropDownList("roleFilter", (SelectList)ViewBag.RoleFilter, "Toate Rolurile", new { @class = "form-select rounded-pill" })
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100 rounded-pill"><i class="fa fa-filter me-2"></i>Filtrează</button>
+                <a href="@Url.Action("Index")" class="btn btn-link text-muted small">Resetează</a>
+            </div>
+        }
+    </div>
+    <div class="card-body p-0">
+        @Html.AntiForgeryToken()
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr class="text-secondary" style="font-size: 13px; font-weight: 700; text-transform: uppercase;">
+                        <th class="ps-4 py-3">Utilizator</th>
+                        <th class="py-3">Email</th>
+                        <th class="text-center py-3" style="width: 25%;">Rol</th>
+                        <th class="text-center pe-4 py-3" style="width: 20%;">Acțiuni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in Model)
+                    {
+                        var roles = userManager.GetRoles(user.Id);
+                        bool isCurrentAdmin = user.Email == User.Identity.Name;
+
+                        <tr>
+                            <td class="ps-4 py-3">
+                                <div class="fw-bold text-dark">@user.FirstName @user.LastName</div>
+                            </td>
+                            <td class="text-secondary py-3">@user.Email</td>
+                            <td class="text-center py-3">
+                                @if (isCurrentAdmin)
+                                {
+                                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-4 py-2 text-uppercase rounded-pill fw-bold small">
+                                        <i class="fas fa-shield-alt me-1"></i> Admin (Sesiune activă)
+                                    </span>
+                                }
+                                else
+                                {
+                                    <select class="form-select form-select-sm rounded-pill px-3 py-1.5 border-secondary border-opacity-25 text-dark fw-bold text-center js-role-select shadow-sm"
+                                            style="width: 150px; display: inline-block; cursor: pointer; background-color: #f8fafc;"
+                                            data-user-id="@user.Id">
+                                        <option value="Admin" @(roles.Contains("Admin") ? "selected" : "")>Admin</option>
+                                        <option value="Professor" @(roles.Contains("Professor") || roles.Contains("Teacher") ? "selected" : "")>Profesor</option>
+                                        <option value="Student" @(roles.Contains("Student") || (!roles.Contains("Admin") && !roles.Contains("Professor")) ? "selected" : "")>Student</option>
+                                    </select>
+                                }
+                            </td>
+                            <td class="text-center pe-4 py-3">
+                                @if (!isCurrentAdmin)
+                                {
+                                    <a href="@Url.Action("Delete", "Users", new { id = user.Id })" class="btn btn-outline-danger btn-sm rounded-pill px-3 fw-bold">
+                                        <i class="fa fa-user-times me-1"></i> Elimină
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small italic">Sesiune curentă</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
         </div>
     </div>
+</div>
 </div>
 
 @section scripts {

@@ -25,21 +25,24 @@
         <div class="card shadow-sm border-0 rounded-4 mb-4">
             <div class="card-body p-4">
                 <label class="form-label fw-bold text-uppercase small text-muted">Titlu Quiz:</label>
-                @Html.TextBoxFor(m => m.QuizTitle, new { @class = "form-control form-control-lg rounded-pill border-primary border-opacity-25 shadow-sm", @placeholder = "Ex: Test Recapitulativ - Capitolul 1" })
+                @Html.TextBoxFor(m => m.QuizTitle, new { @class = "form-control form-control-lg rounded-pill border-primary border-opacity-25 shadow-sm", @placeholder = "Ex: Test Recapitulativ - Capitolul 1", @style = "width: 100%;"})
             </div>
         </div>
 
         @* --- LISTA ÎNTREBĂRI --- *@
         for (int i = 0; i < Model.Questions.Count; i++)
         {
-            <div class="card mb-4 shadow-sm border-0 rounded-4 overflow-hidden">
+            <div class="card mb-4 shadow-sm border-0 rounded-4 ">
                 <div class="card-header bg-primary bg-opacity-10 border-0 py-3">
                     <h5 class="m-0 fw-bold text-primary"><i class="fa fa-question-circle me-2"></i>Întrebarea @(i + 1)</h5>
                 </div>
                 <div class="card-body p-4">
                     <div class="mb-4">
-                        <label class="form-label small fw-bold text-muted text-uppercase">Enunț:</label>
-                        @Html.TextBoxFor(m => m.Questions[i].Text, new { @class = "form-control border-0 bg-light rounded-3 fw-bold py-2 px-3", @style = "font-size: 1.1rem;" })
+                        @Html.TextBoxFor(m => m.Questions[i].Text, new
+                        {
+    @class = "form-control border-0 bg-light rounded-3 fw-bold py-2 px-3",
+    @style = "width: 100%; font-size: 1.25rem; font-weight: 600; text-overflow: clip; overflow: visible;"
+})
                     </div>
 
                     <label class="form-label small fw-bold text-muted text-uppercase mb-3">Variante de răspuns (Bifează varianta corectă):</label>
@@ -53,7 +56,7 @@
                                             @Html.CheckBoxFor(m => m.Questions[i].Choices[j].IsCorrect, new { @class = "form-check-input ms-2", @title = "Marchează ca fiind corect" })
                                         </div>
                                     </div>
-                                    @Html.TextBoxFor(m => m.Questions[i].Choices[j].Text, new { @class = "form-control border-0 py-2 ps-3", @placeholder = "Scrie varianta de răspuns..." })
+                                    @Html.TextBoxFor(m => m.Questions[i].Choices[j].Text, new { @class = "form-control border-0 py-2 ps-3", @placeholder = "Scrie varianta de răspuns..." , @style = "width: 100%;" })
                                 </div>
                             </div>
                         }
@@ -90,4 +93,17 @@
         background-color: #198754;
         border-color: #198754;
     }
+    /* Forțăm ca toate input-urile din card-body să nu fie trunchiate */
+    .card-body input {
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        display: block !important;
+    }
 </style>
+<script>
+    // Rulează acest script după încărcarea paginii
+    document.querySelectorAll('input[type="text"]').forEach(input => {
+        input.setAttribute('size', input.value.length);
+    });
+</script>

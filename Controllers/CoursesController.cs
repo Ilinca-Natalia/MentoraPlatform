@@ -102,20 +102,30 @@ namespace MentoraPlatform.Controllers
         }
 
         // POST: Courses/Delete/5
+        [Authorize(Roles = "Professor, Admin")]
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Professor, Admin")]
         public ActionResult DeleteConfirmed(int id)
         {
-            Course course = db.Courses.Find(id);
+            var course = db.Courses
+                           .Include(c => c.Lessons)
+                           .Include(c => c.EnrolledStudents)
+                           .FirstOrDefault(c => c.Id == id);
 
-            if (course.TeacherId != User.Identity.GetUserId() && !User.IsInRole("Admin"))
+            if (course != null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
-            }
+                // 1. Ștergem cererile de înscriere asociate
+                var requests = db.EnrollmentRequests.Where(r => r.CourseId == id);
+                db.EnrollmentRequests.RemoveRange(requests);
 
-            db.Courses.Remove(course);
-            db.SaveChanges();
+                // 2. Ștergem lecțiile asociate
+                db.Lessons.RemoveRange(course.Lessons);
+
+                // 3. Ștergem cursul
+                db.Courses.Remove(course);
+
+                db.SaveChanges();
+            }
             return RedirectToAction("Index");
         }
 

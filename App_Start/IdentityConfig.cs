@@ -14,7 +14,6 @@ namespace MentoraPlatform
     {
         public Task SendAsync(IdentityMessage message)
         {
-            // TODO: Implementează aici serviciul tău de e-mail (ex: SendGrid, SMTP)
             return Task.FromResult(0);
         }
     }
@@ -23,57 +22,49 @@ namespace MentoraPlatform
     {
         public Task SendAsync(IdentityMessage message)
         {
-            // TODO: Implementează aici serviciul tău de SMS (ex: Twilio)
             return Task.FromResult(0);
         }
     }
 
     public class ApplicationUserManager : UserManager<ApplicationUser>
     {
-        public ApplicationUserManager(IUserStore<ApplicationUser> store)
-            : base(store)
-        {
-        }
+        public ApplicationUserManager(IUserStore<ApplicationUser> store): base(store){ }
 
         public static ApplicationUserManager Create(IdentityFactoryOptions<ApplicationUserManager> options, IOwinContext context)
         {
             var manager = new ApplicationUserManager(new UserStore<ApplicationUser>(context.Get<ApplicationDbContext>()));
 
-            // Configurare validare nume utilizator
             manager.UserValidator = new UserValidator<ApplicationUser>(manager)
             {
                 AllowOnlyAlphanumericUserNames = false,
                 RequireUniqueEmail = true
             };
 
-            // Configurare validare parolă - MODIFICAT: Ajustează după nevoile proiectului
             manager.PasswordValidator = new PasswordValidator
             {
                 RequiredLength = 6,
-                RequireNonLetterOrDigit = false, // Setat pe false pentru o experiență mai ușoară
+                RequireNonLetterOrDigit = false, 
                 RequireDigit = true,
                 RequireLowercase = true,
-                RequireUppercase = false,       // Opțional: setat pe false
+                RequireUppercase = false,       
             };
 
-            // Setări blocare utilizatori
             manager.UserLockoutEnabledByDefault = true;
-            manager.DefaultAccountLockoutTimeSpan = TimeSpan.FromMinutes(15); // Mărit la 15 minute
+            manager.DefaultAccountLockoutTimeSpan = TimeSpan.FromMinutes(15); 
             manager.MaxFailedAccessAttemptsBeforeLockout = 5;
 
-            // Register two factor authentication providers
-            manager.RegisterTwoFactorProvider("Phone Code", new PhoneNumberTokenProvider<ApplicationUser>
-            {
-                MessageFormat = "Codul tău de securitate este: {0}"
-            });
-            manager.RegisterTwoFactorProvider("Email Code", new EmailTokenProvider<ApplicationUser>
-            {
-                Subject = "Cod de securitate",
-                BodyFormat = "Codul tău de securitate este: {0}"
-            });
+            //manager.RegisterTwoFactorProvider("Phone Code", new PhoneNumberTokenProvider<ApplicationUser>
+            //{
+            //    MessageFormat = "Codul tău de securitate este: {0}"
+            //});
+            //manager.RegisterTwoFactorProvider("Email Code", new EmailTokenProvider<ApplicationUser>
+            //{
+            //    Subject = "Cod de securitate",
+            //    BodyFormat = "Codul tău de securitate este: {0}"
+            //});
 
-            manager.EmailService = new EmailService();
-            manager.SmsService = new SmsService();
+            //manager.EmailService = new EmailService();
+            //manager.SmsService = new SmsService();
 
             var dataProtectionProvider = options.DataProtectionProvider;
             if (dataProtectionProvider != null)

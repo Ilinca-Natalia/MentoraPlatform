@@ -34,6 +34,14 @@
             <h2 class="fw-bold mb-1"><i class="fa fa-users-cog text-primary me-2"></i>Catalog Note Elevi</h2>
             <p class="text-muted mb-0">Urmăriți performanțele generale ale elevilor din platformă prin rapoarte detaliate.</p>
         </div>
+        <div>
+            @if (User.IsInRole("Professor") || User.IsInRole("Admin"))
+            {
+                <button id="btnAnalizaRisc" class="btn btn-danger rounded-pill shadow-sm px-4" disabled>
+                    <i class="fa fa-exclamation-triangle me-2"></i> Analiză Risc Abandon
+                </button>
+            }
+        </div>
     </div>
 
     <!-- 1. DASHBOARD GLOBAL NOTE -->
@@ -121,6 +129,23 @@
     <div class="card shadow-sm border-0 rounded-3">
         <div class="card-header bg-white py-3 border-0">
             <h5 class="fw-bold text-dark m-0"><i class="fa fa-users-cog text-primary me-2"></i>Istoric Centralizat Note Elevi</h5>
+        </div>
+        <div class="card p-4 mb-4 shadow-sm border-0">
+            @using (Html.BeginForm("StudentsGrades", "Grades", FormMethod.Get, new { @class = "row g-3" }))
+            {
+                <div class="col-md-3">
+                    @Html.DropDownList("courseId", (SelectList)ViewBag.Courses, "Toate Cursurile", new { @class = "form-select" })
+                </div>
+                <div class="col-md-3">
+                    @Html.DropDownList("quizId", (SelectList)ViewBag.Quizzes, "Toate Testele", new { @class = "form-select" })
+                </div>
+                <div class="col-md-3">
+                    <input type="text" name="studentName" class="form-control" placeholder="Caută student (nume)..." value="@Request.QueryString["studentName"]" />
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary w-100"><i class="fa fa-search me-2"></i>Filtrează</button>
+                </div>
+            }
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -250,6 +275,27 @@
                     }
                 }
             });
+              document.addEventListener("DOMContentLoaded", function() {
+      var dropdown = document.querySelector('select[name="courseId"]');
+      var btn = document.getElementById('btnAnalizaRisc');
+
+      function actualizeazaButon() {
+          // Dacă este selectat un curs, activăm butonul
+          if (dropdown && dropdown.value !== "") {
+              btn.disabled = false;
+              btn.classList.remove('btn-secondary');
+              btn.classList.add('btn-danger');
+              btn.onclick = function() {
+                  window.location.href = '@Url.Action("StudentRiskDashboard", "Grades")' + '?courseId=' + dropdown.value;
+              };
+          } else {
+              btn.disabled = true;
+          }
+      }
+
+      dropdown.addEventListener('change', actualizeazaButon);
+      actualizeazaButon();
+  });
         </script>
     }
 }
