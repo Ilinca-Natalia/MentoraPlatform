@@ -7,8 +7,6 @@
 <div class="container mt-4">
     <div class="card shadow-sm p-4">
         <h2 class="text-primary border-bottom pb-2">Editare: @Model.Title</h2>
-
-        <!-- Modificat: Adăugat enctype pentru a suporta încărcarea de fișiere la editare -->
         @using (Html.BeginForm("Edit", "Lessons", FormMethod.Post, new { enctype = "multipart/form-data" }))
         {
             @Html.AntiForgeryToken()
@@ -48,9 +46,8 @@
 @section Scripts {
     <script src="https://cdn.ckeditor.com/4.22.1/standard/ckeditor.js"></script>
     <script>
-        // Această linie transformă automat textarea-ul cu id="editor" într-un editor stil Word
+        // transformare textare in editor de tip word
         CKEDITOR.replace('editor', {
-            // Putem adăuga setări extra pentru a face editorul mai prietenos
             toolbar: [
                 { name: 'basicstyles', items: ['Bold', 'Italic', 'Underline', 'Strike', '-', 'RemoveFormat'] },
                 { name: 'paragraph', items: ['NumberedList', 'BulletedList', '-', 'Outdent', 'Indent', '-', 'Blockquote'] },

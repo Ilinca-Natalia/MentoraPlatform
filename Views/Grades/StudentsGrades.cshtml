@@ -10,7 +10,7 @@
     var failedCount = totalSubmissions - passedCount;
     var passRate = totalSubmissions > 0 ? Math.Round(((double)passedCount / totalSubmissions) * 100, 0) : 0;
 
-    // 2. STATISTICI DISTRIBUȚIE NOTE (Foarte importantă în mediul educațional)
+    // 2. STATISTICI DISTRIBUȚIE NOTE 
     var distUnder5 = Model.Count(r => r.Score < 5);
     var dist5to7 = Model.Count(r => r.Score >= 5 && r.Score < 7);
     var dist7to9 = Model.Count(r => r.Score >= 7 && r.Score < 9);
@@ -209,10 +209,10 @@
                         label: 'Număr Elevi',
                         data: [@distUnder5, @dist5to7, @dist7to9, @dist9to10],
                         backgroundColor: [
-                            'rgba(239, 68, 68, 0.85)',  // Roșu
-                            'rgba(245, 158, 11, 0.85)', // Portocaliu
-                            'rgba(59, 130, 246, 0.85)',  // Albastru
-                            'rgba(16, 185, 129, 0.85)'  // Verde
+                            'rgba(239, 68, 68, 0.85)',  
+                            'rgba(245, 158, 11, 0.85)', 
+                            'rgba(59, 130, 246, 0.85)',  
+                            'rgba(16, 185, 129, 0.85)'  
                         ],
                         borderWidth: 0,
                         borderRadius: 6
@@ -254,7 +254,7 @@
                     datasets: [{
                         label: 'Medie Curs',
                         data: courseAverages,
-                        backgroundColor: 'rgba(79, 70, 229, 0.8)', // Indigo
+                        backgroundColor: 'rgba(79, 70, 229, 0.8)', 
                         borderWidth: 0,
                         borderRadius: 6
                     }]
@@ -262,7 +262,7 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    indexAxis: 'y', // Convertim în bar-chart orizontal pentru lizibilitatea titlurilor cursurilor
+                    indexAxis: 'y', 
                     plugins: {
                         legend: { display: false }
                     },
@@ -280,7 +280,6 @@
       var btn = document.getElementById('btnAnalizaRisc');
 
       function actualizeazaButon() {
-          // Dacă este selectat un curs, activăm butonul
           if (dropdown && dropdown.value !== "") {
               btn.disabled = false;
               btn.classList.remove('btn-secondary');

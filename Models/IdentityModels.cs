@@ -26,14 +26,12 @@ namespace MentoraPlatform.Models
         {
         }
         public DbSet<CodeProject> CodeProjects { get; set; }
-        // --- TABELE CURSURI ȘI LECȚII ---
         public DbSet<Course> Courses { get; set; }
         public DbSet<Lesson> Lessons { get; set; }
         public DbSet<LessonAttachment> LessonAttachments { get; set; }
         public DbSet<UserLessonProgress> UserLessonProgresses { get; set; }
         public DbSet<EnrollmentRequest> EnrollmentRequests { get; set; }
 
-        // --- TABELE QUIZ (AI) ---
         public DbSet<Quiz> Quizzes { get; set; }
         public DbSet<Question> Questions { get; set; }
         public DbSet<Choice> Choices { get; set; }
@@ -42,13 +40,12 @@ namespace MentoraPlatform.Models
         {
             base.OnModelCreating(modelBuilder);
 
-            // Configurăm relația Many-to-Many
             modelBuilder.Entity<Course>()
                 .HasMany(c => c.EnrolledStudents)
                 .WithMany(u => u.EnrolledCourses)
                 .Map(m =>
                 {
-                    m.ToTable("CourseStudents"); // Numele tabelului de joncțiune
+                    m.ToTable("CourseStudents"); 
                     m.MapLeftKey("CourseId");
                     m.MapRightKey("StudentId");
                 });

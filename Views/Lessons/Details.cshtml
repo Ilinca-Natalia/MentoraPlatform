@@ -4,7 +4,6 @@
 @{
     ViewBag.Title = Model.Title;
     bool isCompleted = ViewBag.IsCompleted ?? false;
-    // Verificăm dacă utilizatorul curent este profesorul cursului sau Admin
     bool isProfessorOrAdmin = User.IsInRole("Admin") || (Model.Course != null && User.Identity.GetUserId() == Model.Course.TeacherId);
 }
 
@@ -34,7 +33,7 @@
                     }
                 </div>
 
-                @* 2. Secțiune Video (Dacă există URL) *@
+                @* 2. Secțiune Video *@
                 @if (!string.IsNullOrEmpty(Model.VideoUrl))
                 {
                     <div class="ratio ratio-16x9 bg-dark shadow-inner">
@@ -43,7 +42,7 @@
                 }
 
                 <div class="card-body px-5 py-5 bg-white">
-                    @* --- SECȚIUNE GENERARE AI (DOAR PENTRU PROFESOR) --- *@
+                    @* --- SECȚIUNE GENERARE AI (doar PROFESOR) --- *@
                     @if (isProfessorOrAdmin)
                     {
                         <div id="aiSection" class="alert alert-purple d-flex flex-column flex-md-row justify-content-between align-items-md-center shadow-sm mb-5 border-0 p-4 rounded-4">
@@ -211,8 +210,8 @@
         const btn = document.getElementById('aiBtn');
 
         if (loadingDiv) loadingDiv.style.display = 'block';
-        if (aiSection) aiSection.style.display = 'none'; // Ascundem panoul pentru a focaliza pe loading
+        if (aiSection) aiSection.style.display = 'none'; 
 
-        return true; // Permitem submit-ul formularului
+        return true;
     }
 </script>

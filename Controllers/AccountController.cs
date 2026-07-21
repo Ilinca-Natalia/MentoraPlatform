@@ -18,16 +18,13 @@ namespace MentoraPlatform.Controllers
         private ApplicationSignInManager _signInManager;
         private ApplicationUserManager _userManager;
 
-        public AccountController()
-        {
-        }
+        public AccountController() { }
 
         public AccountController(ApplicationUserManager userManager, ApplicationSignInManager signInManager)
         {
             UserManager = userManager;
             SignInManager = signInManager;
         }
-
         public ApplicationSignInManager SignInManager
         {
             get => _signInManager ?? HttpContext.GetOwinContext().Get<ApplicationSignInManager>();
@@ -40,6 +37,7 @@ namespace MentoraPlatform.Controllers
             private set => _userManager = value;
         }
 
+        // GET: Account/Login 
         [AllowAnonymous]
         public ActionResult Login(string returnUrl)
         {
@@ -47,9 +45,10 @@ namespace MentoraPlatform.Controllers
             return View();
         }
 
+        // POST: Account/Login 
         [HttpPost]
         [AllowAnonymous]
-        [ValidateAntiForgeryToken]
+        [ValidateAntiForgeryToken] 
         public async Task<ActionResult> Login(LoginViewModel model, string returnUrl)
         {
             if (!ModelState.IsValid) return View(model);
@@ -69,9 +68,11 @@ namespace MentoraPlatform.Controllers
             }
         }
 
+        // GET: Account/Register 
         [AllowAnonymous]
         public ActionResult Register() => View();
 
+        // POST: Account/Register 
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
@@ -90,7 +91,7 @@ namespace MentoraPlatform.Controllers
                 var result = await UserManager.CreateAsync(user, model.Password);
                 if (result.Succeeded)
                 {
-                    await UserManager.AddToRoleAsync(user.Id, "Student");
+                    await UserManager.AddToRoleAsync(user.Id, "Student"); 
                     await SignInManager.SignInAsync(user, isPersistent: false, rememberBrowser: false);
                     return RedirectToAction("Index", "Courses");
                 }
@@ -99,6 +100,7 @@ namespace MentoraPlatform.Controllers
             return View(model);
         }
 
+        // GET: Account/ConfirmEmail 
         [AllowAnonymous]
         public async Task<ActionResult> ConfirmEmail(string userId, string code)
         {
@@ -107,9 +109,11 @@ namespace MentoraPlatform.Controllers
             return View(result.Succeeded ? "ConfirmEmail" : "Error");
         }
 
+        // GET: Account/ForgotPassword 
         [AllowAnonymous]
         public ActionResult ForgotPassword() => View();
 
+        // POST: Account/ForgotPassword 
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
@@ -124,9 +128,11 @@ namespace MentoraPlatform.Controllers
             return View(model);
         }
 
+        // GET: Account/ResetPassword 
         [AllowAnonymous]
         public ActionResult ResetPassword(string code) => code == null ? View("Error") : View();
 
+        // POST: Account/ResetPassword 
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
@@ -143,6 +149,7 @@ namespace MentoraPlatform.Controllers
             return View();
         }
 
+        // POST: Account/LogOff 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult LogOff()

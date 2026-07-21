@@ -11,7 +11,6 @@ namespace MentoraPlatform.Models
         [Display(Name = "Titlu Proiect")]
         public string Title { get; set; }
 
-        // Codul sursă stocat ca text lung (NVARCHAR(MAX)) în baza de date SQL Server
         [DataType(DataType.MultilineText)]
         public string HtmlCode { get; set; }
 
@@ -20,10 +19,7 @@ namespace MentoraPlatform.Models
 
         [DataType(DataType.MultilineText)]
         public string JsCode { get; set; }
-
         public DateTime CreatedAt { get; set; } = DateTime.Now;
-
-        // Relația cu tabelul de utilizatori (Identity) pentru a asigura securitatea proiectelor
         public string UserId { get; set; }
         public virtual ApplicationUser User { get; set; }
     }

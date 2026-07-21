@@ -13,32 +13,33 @@ namespace MentoraPlatform.Controllers
     {
         private ApplicationDbContext db = new ApplicationDbContext();
 
+        // GET: Grades/MyResults
         [Authorize(Roles = "Student")]
         public ActionResult MyResults(int? courseId, int? quizId)
         {
             var userId = User.Identity.GetUserId();
+
             var query = db.QuizResults.Include(r => r.Quiz.Course)
-                          .Where(r => r.StudentId == userId);
+                                      .Where(r => r.StudentId == userId);
 
             if (courseId.HasValue) query = query.Where(r => r.Quiz.CourseId == courseId.Value);
             if (quizId.HasValue) query = query.Where(r => r.QuizId == quizId.Value);
 
-            // Populează dropdown-urile doar cu testele susținute de acest student
             ViewBag.Courses = new SelectList(query.Select(r => r.Quiz.Course).Distinct(), "Id", "Title", courseId);
 
             return View(query.OrderByDescending(r => r.DateTaken).ToList());
         }
 
+        // GET: Grades/StudentsGrades
         [Authorize(Roles = "Professor, Admin")]
         public ActionResult StudentsGrades(int? courseId, int? quizId, string studentName)
         {
             var userId = User.Identity.GetUserId();
             bool isAdmin = User.IsInRole("Admin");
 
-            // Asigură-te că includem Studentul în query
             var query = db.QuizResults
                           .Include(r => r.Quiz.Course)
-                          .Include(r => r.Student) // FOARTE IMPORTANT: Trebuie inclus pentru filtrare
+                          .Include(r => r.Student)
                           .Where(r => isAdmin || r.Quiz.Course.TeacherId == userId);
 
             if (courseId.HasValue)
@@ -47,7 +48,6 @@ namespace MentoraPlatform.Controllers
             if (quizId.HasValue)
                 query = query.Where(r => r.QuizId == quizId.Value);
 
-            // Filtrare după nume - am adăugat ToLower() pentru a fi sigur că se potrivește
             if (!string.IsNullOrEmpty(studentName))
             {
                 string name = studentName.ToLower();
@@ -63,6 +63,7 @@ namespace MentoraPlatform.Controllers
             return View(results);
         }
 
+        // GET: Grades/StudentRiskDashboard
         [Authorize(Roles = "Professor, Admin")]
         public ActionResult StudentRiskDashboard(int courseId)
         {
@@ -71,7 +72,6 @@ namespace MentoraPlatform.Controllers
 
             var progressService = new ProgressService();
 
-            // Transformăm studenții în ViewModel-uri de risc folosind noul serviciu
             var list = course.EnrolledStudents.Select(s => {
                 var risk = progressService.GetStudentRisk(s.Id, courseId);
                 risk.FullName = $"{s.FirstName} {s.LastName}";

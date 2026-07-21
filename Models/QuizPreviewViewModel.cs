@@ -9,13 +9,11 @@ namespace MentoraPlatform.Models
         public string QuizTitle { get; set; }
         public List<QuestionPreview> Questions { get; set; } = new List<QuestionPreview>();
     }
-
     public class QuestionPreview
     {
         public string Text { get; set; }
         public List<ChoicePreview> Choices { get; set; } = new List<ChoicePreview>();
     }
-
     public class ChoicePreview
     {
         public string Text { get; set; }

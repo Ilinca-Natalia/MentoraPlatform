@@ -93,7 +93,6 @@
         background-color: #198754;
         border-color: #198754;
     }
-    /* Forțăm ca toate input-urile din card-body să nu fie trunchiate */
     .card-body input {
         white-space: normal !important;
         overflow: visible !important;
@@ -102,7 +101,6 @@
     }
 </style>
 <script>
-    // Rulează acest script după încărcarea paginii
     document.querySelectorAll('input[type="text"]').forEach(input => {
         input.setAttribute('size', input.value.length);
     });

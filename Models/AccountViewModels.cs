@@ -10,7 +10,6 @@ namespace MentoraPlatform.Models
         [Display(Name = "Email")]
         public string Email { get; set; }
     }
-
     public class LoginViewModel
     {
         [Required(ErrorMessage = "Adresa de email este obligatorie.")]
@@ -74,7 +73,6 @@ namespace MentoraPlatform.Models
 
         public string Code { get; set; }
     }
-
     public class ForgotPasswordViewModel
     {
         [Required(ErrorMessage = "Email-ul este obligatoriu.")]
@@ -82,9 +80,8 @@ namespace MentoraPlatform.Models
         [Display(Name = "Email")]
         public string Email { get; set; }
     }
-
-    public class ExternalLoginListViewModel
-    {
-        public string ReturnUrl { get; set; }
-    }
+    //public class ExternalLoginListViewModel
+    //{
+    //    public string ReturnUrl { get; set; }
+    //}
 }

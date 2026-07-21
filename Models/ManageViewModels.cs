@@ -24,7 +24,6 @@ namespace MentoraPlatform.Models
     {
         public string Purpose { get; set; }
     }
-
     public class SetPasswordViewModel
     {
         [Required]

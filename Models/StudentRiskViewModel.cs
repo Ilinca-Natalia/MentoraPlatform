@@ -13,8 +13,6 @@ namespace MentoraPlatform.Models
         public double ProgressPercentage { get; set; }
         public double AverageScore { get; set; }
         public int DaysSinceLastActivity { get; set; }
-
-        // Logica de calcul a riscului (IsAtRisk devine true dacă se îndeplinește oricare condiție)
         public bool IsAtRisk => ProgressPercentage < 20 || AverageScore < 4 || DaysSinceLastActivity > 14;
     }
 }

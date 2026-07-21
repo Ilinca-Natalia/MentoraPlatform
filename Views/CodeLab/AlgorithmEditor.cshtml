@@ -50,7 +50,6 @@ public class Program {
 </div>
 
 <script>
-    // 1. Inițializare Editor
     var editor = CodeMirror.fromTextArea(document.getElementById("codeEditor"), {
         mode: "text/x-csharp",
         theme: "dracula",
@@ -59,7 +58,6 @@ public class Program {
         autoCloseBrackets: true
     });
 
-    // 2. Schimbare limbaj în timp real
     function updateEditorMode() {
         const lang = document.getElementById('langSelect').value;
         if(lang === "54") {
@@ -72,7 +70,6 @@ public class Program {
         }
     }
 
-    // 3. Logica de Export
     function exportCode() {
         const code = editor.getValue();
         const lang = document.getElementById('langSelect').value;
@@ -84,13 +81,11 @@ public class Program {
         a.click();
     }
 
-    // 4. Logica de Compilare (Placeholder pentru API)
     async function compileCode() {
     const terminal = document.getElementById('terminal');
     terminal.innerHTML = "<div class='text-warning animate-pulse'>[BUILD] Se trimite codul către backend-ul securizat Mentora...</div>";
 
     try {
-        // Trimitem codul local către serverul nostru de C#
         const response = await fetch('@Url.Action("CompileAlgorithm", "CodeLab")', {
             method: "POST",
             headers: {
@@ -110,7 +105,6 @@ public class Program {
             return;
         }
 
-        // Analizăm răspunsul primit de la serverul nostru, provenit de la Judge0
         if (result.stdout) {
             terminal.innerHTML += `<div class='text-success fw-bold'>[OUTPUT]:</div><pre class='text-white' style='white-space: pre-wrap;'>${result.stdout}</pre>`;
         }
@@ -121,7 +115,6 @@ public class Program {
             terminal.innerHTML += `<div class='text-danger fw-bold'>[RUNTIME ERROR]:</div><pre class='text-danger' style='white-space: pre-wrap;'>${result.stderr}</pre>`;
         }
 
-        // În caz de execuție de succes fără stdout (ex: programe simple fără afișare)
         if (!result.stdout && !result.compile_output && !result.stderr) {
             terminal.innerHTML += `<div class='text-muted'>[SUCCESS]: Programul s-a executat dar nu a returnat nimic în consolă.</div>`;
         }

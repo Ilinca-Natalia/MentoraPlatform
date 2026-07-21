@@ -6,21 +6,16 @@
     var currentUserId = User.Identity.GetUserId();
     bool isAdmin = User.IsInRole("Admin");
 
-    // 1. FILTRARE SECURIZATĂ: Păstrăm doar testele pe care utilizatorul are dreptul legal să le vadă
     var accessibleQuizzes = Model.Where(quiz =>
     {
-        if (isAdmin) return true; // Adminul are acces necondiționat la tot
-
-        // Profesorul vede doar testele de la cursurile pe care le predă el
+        if (isAdmin) return true; 
         bool isTeacherOwner = User.IsInRole("Professor") && quiz.Course.TeacherId == currentUserId;
 
-        // Studentul vede doar testele de la cursurile la care este înscris activ
         bool isStudentEnrolled = User.IsInRole("Student") && quiz.Course.EnrolledStudents != null && quiz.Course.EnrolledStudents.Any(s => s.Id == currentUserId);
 
         return isTeacherOwner || isStudentEnrolled;
     }).ToList();
 
-    // 2. GRUPARE: Împărțim testele filtrate în funcție de Cursul de care aparțin
     var groupedQuizzes = accessibleQuizzes.GroupBy(q => q.Course).OrderBy(g => g.Key.Title);
 }
 
@@ -61,14 +56,13 @@
 </style>
 
 <div class="container mt-4 pb-5 text-start">
-    <!-- Antet Pagina -->
+    <!-- Antet -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2 class="fw-bold mb-1"><i class="fa fa-tasks text-primary me-2"></i>Teste disponibile</h2>
         </div>
     </div>
 
-    <!-- Verificăm dacă utilizatorul are acces la cel puțin un test -->
     @if (groupedQuizzes.Any())
     {
         foreach (var group in groupedQuizzes)

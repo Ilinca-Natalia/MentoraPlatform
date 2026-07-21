@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 namespace MentoraPlatform.Models
 {
-    // Acest model va împacheta cursul și informațiile despre progres
     public class CourseDetailsViewModel
     {
         public Course Course { get; set; }

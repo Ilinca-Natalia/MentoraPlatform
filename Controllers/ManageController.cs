@@ -1,26 +1,25 @@
-﻿using System;
+﻿using MentoraPlatform.Models;
+using Microsoft.AspNet.Identity;
+using System;
+using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
-using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.Owin;
 using Microsoft.Owin.Security;
-using MentoraPlatform.Models;
 
 namespace MentoraPlatform.Controllers
 {
-    [Authorize]
+    [Authorize] 
     public class ManageController : Controller
     {
         private ApplicationSignInManager _signInManager;
         private ApplicationUserManager _userManager;
         private readonly ApplicationDbContext db = new ApplicationDbContext();
 
-        public ManageController()
-        {
-        }
+        public ManageController() { }
 
         public ManageController(ApplicationUserManager userManager, ApplicationSignInManager signInManager)
         {
@@ -40,7 +39,7 @@ namespace MentoraPlatform.Controllers
             private set => _userManager = value;
         }
 
-        // GET: /Manage/Index
+        // GET: /Manage/Index 
         public async Task<ActionResult> Index(ManageMessageId? message)
         {
             ViewBag.StatusMessage =
@@ -108,20 +107,9 @@ namespace MentoraPlatform.Controllers
         {
             if (disposing)
             {
-                if (_userManager != null)
-                {
-                    _userManager.Dispose();
-                    _userManager = null;
-                }
-                if (_signInManager != null)
-                {
-                    _signInManager.Dispose();
-                    _signInManager = null;
-                }
-                if (db != null)
-                {
-                    db.Dispose();
-                }
+                _userManager?.Dispose();
+                _signInManager?.Dispose();
+                db?.Dispose();
             }
             base.Dispose(disposing);
         }

@@ -16,12 +16,11 @@ namespace MentoraPlatform.Controllers
     {
         private ApplicationDbContext db = new ApplicationDbContext();
 
-        // GET: Lessons/Details/5
+        // GET: Lessons/Details/5 
         public ActionResult Details(int? id)
         {
             if (id == null) return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
 
-            // Încărcăm lecția împreună cu cursul și atașamentele sale din baza de date
             var lesson = db.Lessons
                            .Include(l => l.Course)
                            .Include(l => l.LessonAttachments)
@@ -29,7 +28,6 @@ namespace MentoraPlatform.Controllers
 
             if (lesson == null) return HttpNotFound();
 
-            // Trimitem către View starea de finalizare pentru studentul logat
             var userId = User.Identity.GetUserId();
             ViewBag.IsCompleted = db.UserLessonProgresses
                                     .Any(p => p.UserId == userId && p.LessonId == id);
@@ -37,7 +35,7 @@ namespace MentoraPlatform.Controllers
             return View(lesson);
         }
 
-        // GET: Lessons/Create?courseId=5
+        // GET: Lessons/Create?courseId=5 
         [Authorize(Roles = "Professor, Admin")]
         public ActionResult Create(int courseId)
         {
@@ -48,113 +46,32 @@ namespace MentoraPlatform.Controllers
                 return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
 
             ViewBag.CourseTitle = course.Title;
-            ViewBag.CourseId = courseId; // Trimitem ID-ul către View
+            ViewBag.CourseId = courseId;
             return View();
         }
 
+        // POST: Lessons/Create 
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Professor, Admin")]
-        // REZOLVAT: Parametrul pentru fișiere a fost redenumit în "attachments" pentru a se potrivi cu interfața HTML
         public ActionResult Create([Bind(Include = "Title,Content,CourseId,VideoUrl")] Lesson lesson, IEnumerable<HttpPostedFileBase> attachments)
         {
             if (ModelState.IsValid)
             {
-                // 1. Curățăm link-ul de YouTube pentru Embed
                 if (!string.IsNullOrEmpty(lesson.VideoUrl))
                 {
                     lesson.VideoUrl = lesson.VideoUrl.Replace("watch?v=", "embed/");
                 }
 
-                // 2. Salvăm lecția în baza de date pentru a genera ID-ul acesteia
                 db.Lessons.Add(lesson);
-                db.SaveChanges();
+                db.SaveChanges(); 
 
-                // 3. Procesăm fișierele încărcate (utilizând noul nume de parametru)
                 if (attachments != null)
                 {
                     string uploadDir = "~/Uploads/Lessons/";
                     string physicalPath = Server.MapPath(uploadDir);
 
-                    // Creăm folderul pe server dacă nu există fizic
-                    if (!Directory.Exists(physicalPath))
-                    {
-                        Directory.CreateDirectory(physicalPath);
-                    }
-
-                    foreach (var file in attachments)
-                    {
-                        if (file != null && file.ContentLength > 0)
-                        {
-                            string fileName = Guid.NewGuid() + Path.GetExtension(file.FileName);
-                            string path = Path.Combine(physicalPath, fileName);
-                            file.SaveAs(path);
-
-                            var attachment = new LessonAttachment
-                            {
-                                FileName = file.FileName,
-                                FilePath = "/Uploads/Lessons/" + fileName,
-                                LessonId = lesson.Id, // Se leagă automat de ID-ul lecției proaspăt generate
-                                FileType = Path.GetExtension(file.FileName)
-                            };
-                            db.LessonAttachments.Add(attachment);
-                        }
-                    }
-                    db.SaveChanges(); // Salvăm atașamentele în baza de date
-                }
-
-                return RedirectToAction("Details", "Courses", new { id = lesson.CourseId });
-            }
-
-            // Repopulăm datele în caz de eroare la validare
-            var course = db.Courses.Find(lesson.CourseId);
-            ViewBag.CourseTitle = course?.Title;
-            ViewBag.CourseId = lesson.CourseId;
-
-            return View(lesson);
-        }
-
-        // GET: Lessons/Edit/5
-        [Authorize(Roles = "Professor, Admin")]
-        public ActionResult Edit(int? id)
-        {
-            if (id == null) return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-
-            var lesson = db.Lessons.Include(l => l.Course).FirstOrDefault(l => l.Id == id);
-            if (lesson == null) return HttpNotFound();
-
-            if (lesson.Course.TeacherId != User.Identity.GetUserId() && !User.IsInRole("Admin"))
-                return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
-
-            return View(lesson);
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Professor, Admin")]
-        // REZOLVAT: Am adăugat suportul pentru încărcarea de fișiere adiționale și pe ecranul de Editare
-        public ActionResult Edit([Bind(Include = "Id,Title,Content,CourseId,VideoUrl")] Lesson lesson, IEnumerable<HttpPostedFileBase> attachments)
-        {
-            if (ModelState.IsValid)
-            {
-                // Curățăm link-ul de YouTube
-                if (!string.IsNullOrEmpty(lesson.VideoUrl))
-                {
-                    lesson.VideoUrl = lesson.VideoUrl.Replace("watch?v=", "embed/");
-                }
-
-                db.Entry(lesson).State = EntityState.Modified;
-
-                // Salvăm noile atașamente încărcate la editare (dacă există)
-                if (attachments != null)
-                {
-                    string uploadDir = "~/Uploads/Lessons/";
-                    string physicalPath = Server.MapPath(uploadDir);
-
-                    if (!Directory.Exists(physicalPath))
-                    {
-                        Directory.CreateDirectory(physicalPath);
-                    }
+                    if (!Directory.Exists(physicalPath)) Directory.CreateDirectory(physicalPath);
 
                     foreach (var file in attachments)
                     {
@@ -174,17 +91,22 @@ namespace MentoraPlatform.Controllers
                             db.LessonAttachments.Add(attachment);
                         }
                     }
+                    db.SaveChanges();
                 }
 
-                db.SaveChanges();
                 return RedirectToAction("Details", "Courses", new { id = lesson.CourseId });
             }
+
+            var course = db.Courses.Find(lesson.CourseId);
+            ViewBag.CourseTitle = course?.Title;
+            ViewBag.CourseId = lesson.CourseId;
+
             return View(lesson);
         }
 
-        // GET: Lessons/Delete/5
+        // GET: Lessons/Edit/5 
         [Authorize(Roles = "Professor, Admin")]
-        public ActionResult Delete(int? id)
+        public ActionResult Edit(int? id)
         {
             if (id == null) return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
 
@@ -197,6 +119,65 @@ namespace MentoraPlatform.Controllers
             return View(lesson);
         }
 
+        // POST: Lessons/Edit/5 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Professor, Admin")]
+        public ActionResult Edit([Bind(Include = "Id,Title,Content,CourseId,VideoUrl")] Lesson lesson, IEnumerable<HttpPostedFileBase> attachments)
+        {
+            if (ModelState.IsValid)
+            {
+                if (!string.IsNullOrEmpty(lesson.VideoUrl))
+                {
+                    lesson.VideoUrl = lesson.VideoUrl.Replace("watch?v=", "embed/");
+                }
+
+                db.Entry(lesson).State = EntityState.Modified;
+
+                if (attachments != null)
+                {
+                    string uploadDir = "~/Uploads/Lessons/";
+                    string physicalPath = Server.MapPath(uploadDir);
+                    if (!Directory.Exists(physicalPath)) Directory.CreateDirectory(physicalPath);
+
+                    foreach (var file in attachments)
+                    {
+                        if (file != null && file.ContentLength > 0)
+                        {
+                            string fileName = Guid.NewGuid() + Path.GetExtension(file.FileName);
+                            file.SaveAs(Path.Combine(physicalPath, fileName));
+                            db.LessonAttachments.Add(new LessonAttachment
+                            {
+                                FileName = file.FileName,
+                                FilePath = "/Uploads/Lessons/" + fileName,
+                                LessonId = lesson.Id,
+                                FileType = Path.GetExtension(file.FileName)
+                            });
+                        }
+                    }
+                }
+
+                db.SaveChanges();
+                return RedirectToAction("Details", "Courses", new { id = lesson.CourseId });
+            }
+            return View(lesson);
+        }
+
+        // GET: Lessons/Delete/5 
+        [Authorize(Roles = "Professor, Admin")]
+        public ActionResult Delete(int? id)
+        {
+            if (id == null) return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            var lesson = db.Lessons.Include(l => l.Course).FirstOrDefault(l => l.Id == id);
+            if (lesson == null) return HttpNotFound();
+
+            if (lesson.Course.TeacherId != User.Identity.GetUserId() && !User.IsInRole("Admin"))
+                return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
+
+            return View(lesson);
+        }
+
+        // POST: Lessons/Delete/5 
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Professor, Admin")]
@@ -209,14 +190,14 @@ namespace MentoraPlatform.Controllers
             return RedirectToAction("Details", "Courses", new { id = courseId });
         }
 
+        // POST: Lessons/MarkComplete 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult MarkComplete(int id)
         {
             var userId = User.Identity.GetUserId();
-            var lesson = db.Lessons.Find(id);
-
             var existing = db.UserLessonProgresses.FirstOrDefault(p => p.UserId == userId && p.LessonId == id);
+
             if (existing == null)
             {
                 db.UserLessonProgresses.Add(new UserLessonProgress

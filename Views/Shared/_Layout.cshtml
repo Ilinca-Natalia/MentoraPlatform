@@ -21,21 +21,19 @@
                 <ul class="nav navbar-nav me-auto">
                     @if (Request.IsAuthenticated)
                     {
-                        @* 1. CURSURI - Toată lumea le vede *@
+                        @* 1. CURSURI  *@
                         <li class="nav-item">
                             @Html.ActionLink("Cursuri", "Index", "Courses", null, new { @class = "nav-link" })
                         </li>
 
-                        @* 2. TESTE - Dinamic în funcție de rol (Modificat pentru QuizzesController) *@
+                        @* 2. TESTE  *@
                         <li class="nav-item">
                             @if (User.IsInRole("Student"))
                             {
-                                @* Studenții merg la Index pentru a vedea lista de teste disponibile *@
                                 @Html.ActionLink("Teste", "Index", "Quizzes", null, new { @class = "nav-link" })
                             }
                             else
                             {
-                                @* Profesorii/Adminii merg la Index (sau o metodă de gestionare) *@
                                 @Html.ActionLink("Gestionare Teste", "Index", "Quizzes", null, new { @class = "nav-link" })
                             }
                         </li>
@@ -52,12 +50,12 @@
                             }
                         </li>
 
-                        @* 4. CODE WRITING - Toată lumea are acces la editor *@
+                        @* 4. CODE WRITING  *@
                         <li class="nav-item">
                             @Html.ActionLink("Code Writing", "Index", "CodeLab", null, new { @class = "nav-link text-warning" })
                         </li>
 
-                        @* 5. GESTIONARE UTILIZATORI - Doar pentru Admin *@
+                        @* 5. GESTIONARE UTILIZATORI  *@
                         if (User.IsInRole("Admin"))
                         {
                             <li class="nav-item">
@@ -67,7 +65,7 @@
                     }
                 </ul>
 
-                @* 6. PARTEA DE CONT (Login/Register sau Salut, User! + Logout) *@
+                @* 6. CONT *@
                 @Html.Partial("_LoginPartial")
             </div>
         </div>
@@ -79,7 +77,6 @@
             <p>&copy; @DateTime.Now.Year - Mentora Application</p>
         </footer>
     </div>
-    <!-- CSS pentru Chat -->
     <style>
         #chatWidget {
             position: fixed;
@@ -104,7 +101,6 @@
             #toggleChat:hover {
                 transform: scale(1.1);
             }
-        /* Am mutat display: none aici pentru a fi preluat corect */
         #chatWindow {
             display: none;
             width: 350px;
@@ -163,7 +159,7 @@
         }
     </style>
 
-    <!-- Structura HTML -->
+    <!-- Structura chatbot -->
     <div id="chatWidget">
         <button id="toggleChat"><i class="fas fa-comment"></i></button>
         <div id="chatWindow">
@@ -173,7 +169,6 @@
         </div>
     </div>
 
-    <!-- Script actualizat -->
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const toggleBtn = document.getElementById('toggleChat');
@@ -183,7 +178,6 @@
             const loader = document.getElementById('loader');
 
             toggleBtn.onclick = () => {
-                // Verificăm stilul inline sau computed
                 win.style.display = (win.style.display === 'none' || win.style.display === '') ? 'flex' : 'none';
             };
 
@@ -194,7 +188,6 @@
                     input.value = '';
                     loader.style.display = 'block';
 
-                    // Verifică dacă există token-ul
                     const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
                     const token = tokenInput ? tokenInput.value : '';
 

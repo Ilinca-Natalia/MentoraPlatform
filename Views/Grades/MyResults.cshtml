@@ -3,13 +3,11 @@
 @{
     ViewBag.Title = "Notele Mele";
 
-    // Calculăm statistici de bază direct în Razor
     var totalTests = Model.Count();
     var averageScore = totalTests > 0 ? Math.Round(Model.Average(r => r.Score), 2) : 0;
     var passedCount = Model.Count(r => r.Score >= 5);
     var passRate = totalTests > 0 ? Math.Round(((double)passedCount / totalTests) * 100, 0) : 0;
 
-    // Sortăm cronologic pentru a randa corect graficul de evoluție
     var chronologicalGrades = Model.OrderBy(r => r.DateTaken).ToList();
 }
 
@@ -150,7 +148,6 @@
 {
     @section scripts {
         <script>
-            // Datele pregătite pentru axa X (Denumire test) și axa Y (Notă)
             var labels = [
                 @foreach (var res in chronologicalGrades) {
                     @Html.Raw("'" + res.Quiz.Title + "',")

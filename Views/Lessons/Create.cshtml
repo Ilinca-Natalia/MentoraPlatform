@@ -73,9 +73,8 @@
 @section Scripts {
     <script src="https://cdn.ckeditor.com/4.22.1/standard/ckeditor.js"></script>
     <script>
-        // Această linie transformă automat textarea-ul cu id="editor" într-un editor stil Word
+        // transformare textare in editor de tip word
         CKEDITOR.replace('editor', {
-            // Putem adăuga setări extra pentru a face editorul mai prietenos
             toolbar: [
                 { name: 'basicstyles', items: ['Bold', 'Italic', 'Underline', 'Strike', '-', 'RemoveFormat'] },
                 { name: 'paragraph', items: ['NumberedList', 'BulletedList', '-', 'Outdent', 'Indent', '-', 'Blockquote'] },

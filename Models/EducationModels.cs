@@ -28,7 +28,6 @@ namespace MentoraPlatform.Models
         public virtual ICollection<Lesson> Lessons { get; set; }
         public virtual ICollection<ApplicationUser> EnrolledStudents { get; set; } = new List<ApplicationUser>();
 
-        // Un curs poate avea mai multe Quiz-uri (de exemplu, unul după fiecare capitol)
         public virtual ICollection<Quiz> Quizzes { get; set; }
     }
 
@@ -65,8 +64,6 @@ namespace MentoraPlatform.Models
         [ForeignKey("LessonId")]
         public virtual Lesson Lesson { get; set; }
     }
-
-    // NOU: Modelul de stocare pentru fluxul de aprobare a cererilor de înscriere la cursuri
     public class EnrollmentRequest
     {
         [Key]
@@ -95,7 +92,6 @@ namespace MentoraPlatform.Models
         [Display(Name = "Titlu Quiz")]
         public string Title { get; set; }
 
-        // Putem lega Quiz-ul de un Curs întreg sau de o Lecție specifică
         public int CourseId { get; set; }
         [ForeignKey("CourseId")]
         public virtual Course Course { get; set; }

@@ -14,15 +14,15 @@ namespace MentoraPlatform.Controllers
     [Authorize]
     public class CodeLabController : Controller
     {
-        // Cheia privată RapidAPI Judge0 securizată pe server (utilizată în Algorithm Lab)
-        private readonly string _rapidApiKey = "tu-pune-aici-cheia-ta-de-API-RapidAPI-Judge0";
-        // Pagina principală a laboratoarelor (Lobby)
+        private readonly string _rapidApiKey = "your key here";
+
+        // GET: CodeLab 
         public ActionResult Index()
         {
             return View();
         }
 
-        // Metoda GET pentru Web Editor - Încarcă un proiect salvat existent sau instanțiază un model gol
+        // GET: CodeLab/WebEditor 
         public ActionResult WebEditor(int? id)
         {
             if (id.HasValue && id.Value > 0)
@@ -32,7 +32,6 @@ namespace MentoraPlatform.Controllers
                     string currentUserId = User.Identity.GetUserId();
                     var project = context.CodeProjects.Find(id.Value);
 
-                    // Verificăm securitatea: utilizatorul logat trebuie să fie proprietarul proiectului
                     if (project != null && project.UserId == currentUserId)
                     {
                         return View(project);
@@ -40,25 +39,24 @@ namespace MentoraPlatform.Controllers
                 }
             }
 
-            // Dacă nu avem ID, deschidem un mediu de lucru complet curat
             return View(new CodeProject { Title = "Proiect Web Nou" });
         }
 
-        // Sandbox SQL pentru testarea interogărilor
+        // GET: CodeLab/SqlEditor 
         public ActionResult SqlEditor()
         {
             return View();
         }
 
-        // Laboratorul de algoritmi C# / C++
+        // GET: CodeLab/AlgorithmEditor 
         public ActionResult AlgorithmEditor()
         {
             return View();
         }
 
-        // Salvarea asincronă a codului scris în baza de date (cu suport pentru INSERT și UPDATE)
+        // POST: CodeLab/SaveProject 
         [HttpPost]
-        [ValidateInput(false)] // Permite trimiterea string-urilor HTML marcat direct către server fără a fi respinse ca atacuri XSS
+        [ValidateInput(false)]
         public ActionResult SaveProject(string title, string htmlCode, string cssCode, string jsCode, int? projectId)
         {
             if (string.IsNullOrWhiteSpace(title))
@@ -73,7 +71,6 @@ namespace MentoraPlatform.Controllers
                     string currentUserId = User.Identity.GetUserId();
                     CodeProject project;
 
-                    // Dacă proiectul există deja, executăm actualizarea datelor (UPDATE)
                     if (projectId.HasValue && projectId.Value > 0)
                     {
                         project = context.CodeProjects.Find(projectId.Value);
@@ -88,7 +85,6 @@ namespace MentoraPlatform.Controllers
                         project.JsCode = jsCode;
                         project.CreatedAt = DateTime.Now;
                     }
-                    // Dacă proiectul este nou, îl adăugăm în tabelă (INSERT)
                     else
                     {
                         project = new CodeProject
@@ -113,7 +109,7 @@ namespace MentoraPlatform.Controllers
             }
         }
 
-        // Compilatorul asincron din spate pentru Algorithm Lab
+        // POST: CodeLab/CompileAlgorithm
         [HttpPost]
         [ValidateInput(false)]
         public async Task<ActionResult> CompileAlgorithm(string sourceCode, int languageId)
@@ -135,7 +131,7 @@ namespace MentoraPlatform.Controllers
                     string jsonPayload = JsonConvert.SerializeObject(requestPayload);
 
                     var httpContent = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
-                    httpContent.Headers.ContentType.Parameters.Clear(); // Eliminăm charset-ul adițional care genera erorile UTF-8 pe Judge0
+                    httpContent.Headers.ContentType.Parameters.Clear();
 
                     var response = await client.PostAsync("https://judge0-ce.p.rapidapi.com/submissions?base64_encoded=false&wait=true", httpContent);
 
@@ -157,7 +153,7 @@ namespace MentoraPlatform.Controllers
             }
         }
 
-        // Executorul de interogări SQL Sandbox
+        // POST: CodeLab/ExecuteSql 
         [HttpPost]
         public ActionResult ExecuteSql(string query)
         {

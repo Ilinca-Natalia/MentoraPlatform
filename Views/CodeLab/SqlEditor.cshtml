@@ -165,11 +165,9 @@
         }
 
         let csv = [];
-        // Parcurgem toate rândurile (header + body)
         for (let i = 0; i < rows.length; i++) {
             let row = [], cols = rows[i].querySelectorAll('td, th');
             for (let j = 0; j < cols.length; j++) {
-                // Curățăm textul de virgule interne pentru a nu strica formatul CSV
                 let data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, "").replace(/,/g, ";");
                 row.push(data);
             }

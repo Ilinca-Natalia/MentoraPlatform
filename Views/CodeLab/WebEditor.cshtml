@@ -54,7 +54,6 @@
 </style>
 
 <div class="container-fluid py-3 text-white">
-    <!-- Păstrăm ID-ul proiectului pentru operațiile automate din baza de date -->
     <input type="hidden" id="projectId" value="@Model.Id" />
 
     <!-- Bară Navigare Editor -->
@@ -101,7 +100,6 @@
 <script type="text/javascript">
     const config = { theme: "dracula", lineNumbers: true, tabSize: 2 };
 
-    // Inițializare CodeMirror instanțe editori
     var htmlEditor = CodeMirror.fromTextArea(document.getElementById("htmlCode"), { ...config, mode: "xml" });
     var cssEditor = CodeMirror.fromTextArea(document.getElementById("cssCode"), { ...config, mode: "css" });
     var jsEditor = CodeMirror.fromTextArea(document.getElementById("jsCode"), {
@@ -111,7 +109,6 @@
         lint: true
     });
 
-    // Îmbinare cod local și compilare directă în iframe-ul sandbox
     function runWebCode() {
         const html = htmlEditor.getValue();
         const css = cssEditor.getValue();
@@ -121,7 +118,6 @@
         consoleLog.innerHTML = "<div>[Build started at " + new Date().toLocaleTimeString() + "]</div>";
         let hasErrors = false;
 
-        // 1. Validare structurală HTML (HTMLHint)
         if (window.HTMLHint) {
             const htmlValidation = HTMLHint.verify(html, { "tag-pair": true, "attr-no-duplication": true, "tagname-lowercase": true });
             if (htmlValidation.length > 0) {
@@ -131,8 +127,6 @@
                 });
             }
         }
-
-        // 2. Validare standardizare CSS (CSSLint)
         if (window.CSSLint) {
             const cssValidation = CSSLint.verify(css);
             cssValidation.messages.forEach(msg => {
@@ -143,7 +137,6 @@
             });
         }
 
-        // 3. Validare sintaxă primară JavaScript
         try {
             new Function(js);
         } catch (e) {
@@ -158,7 +151,6 @@
 
         logToConsole("BUILD SUCCESSFUL. Randare virtuală...", "success");
 
-        // Compilare și injectare cod în Iframe
         const preview = document.getElementById('preview').contentWindow.document;
         const errorTrap = `<script>
             window.onerror = function(m, u, l) { window.parent.postMessage({t:'error', m:m, l:l}, '*'); };
@@ -170,7 +162,6 @@
         preview.close();
     }
 
-    // Trimitere asincronă a codului scris către serverul ASP.NET în SQL Server
     async function saveProjectToDb() {
         const title = document.getElementById('projectTitle').value;
         const html = htmlEditor.getValue();
@@ -196,7 +187,6 @@
             const result = await response.json();
             if (result.success) {
                 logToConsole(result.message, "success");
-                // Salvăm Id-ul din DB pe client pentru viitoarele actualizări de tip UPDATE
                 document.getElementById('projectId').value = result.id;
             } else {
                 logToConsole("Eroare la salvare: " + result.message, "error");
@@ -218,7 +208,6 @@
 
     function clearConsole() { document.getElementById('consoleLog').innerHTML = "> Consolă curățată."; }
 
-    // Exportarea bundle-ului ca fișier unic HTML descărcabil offline
     function exportWebCode() {
         const bundle = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${cssEditor.getValue()}</style></head><body>${htmlEditor.getValue()}<script>${jsEditor.getValue()}<\/script></body></html>`;
         const a = document.createElement('a');
@@ -227,7 +216,6 @@
         a.click();
     }
 
-    // Mesaje din consolă provenite din iframe (console.log sau erori run-time)
     window.addEventListener('message', (e) => {
         if (e.data.t === 'error') logToConsole(`RUNTIME ERROR: ${e.data.m}`, "error");
         if (e.data.t === 'log') logToConsole(`CONSOLE: ${e.data.m}`, "info");
